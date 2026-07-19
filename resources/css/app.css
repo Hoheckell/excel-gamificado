@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --excel-dark: #107c41;
+    --excel-light: #1f9a55;
+    --excel-tint: #e1f3e9;
+    --excel-grid: #d0ded7;
+    --bg-main: #f3f7f5;
+    --bg-surface: #ffffff;
+    --border-color: #bdc3c7;
+    --border-light: #e0e0e0;
+    --text-main: #212529;
+    --text-muted: #666666;
+    --text-invert: #ffffff;
+}
+
+[x-cloak] {
+    display: none;
+}
+
+@layer base {
+    html {
+        font-family: 'Montserrat', sans-serif;
+    }
+}
+
+@layer components {
+    .excel-grid-bg {
+        background-color: var(--bg-main);
+        background-image:
+            linear-gradient(var(--excel-grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--excel-grid) 1px, transparent 1px);
+        background-size: 45px 45px;
+    }
+
+    .excel-ribbon {
+        @apply bg-excel-dark text-white border-b-4 border-excel-light;
+    }
+
+    .excel-tab-inactive {
+        @apply bg-[#f3f3f3] text-[#555555] font-medium text-[11px] px-4 py-2.5 border-r border-gray-200;
+    }
+
+    .excel-tab-active {
+        @apply bg-white text-excel-dark font-bold text-[11px] px-4 py-2.5 border-b-[3px] border-excel-dark -mb-[1px] border-r border-gray-200;
+    }
+
+    .feature-card {
+        @apply bg-white border border-[--border-light] rounded-excel p-6 flex flex-col items-center text-center cursor-pointer transition-all duration-200;
+    }
+
+    .feature-card:hover {
+        border-color: var(--excel-light);
+        box-shadow: 0 8px 20px rgba(16, 124, 65, 0.08);
+        transform: translateY(-3px);
+        background-color: var(--excel-tint);
+    }
+
+    .feature-card:hover .icon-wrapper {
+        background-color: var(--excel-dark);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .icon-wrapper {
+        @apply w-[60px] h-[60px] rounded-full flex justify-center items-center mb-4 transition-all duration-200;
+        background-color: var(--excel-tint);
+        color: var(--excel-dark);
+    }
+
+    .btn-excel {
+        @apply bg-excel-dark text-white font-semibold uppercase tracking-wider px-5 py-3 rounded-excel transition-all duration-200;
+        box-shadow: 0 4px 15px rgba(16, 124, 65, 0.2);
+    }
+
+    .btn-excel:hover {
+        background-color: var(--excel-light);
+        box-shadow: 0 6px 20px rgba(31, 154, 85, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-excel:active {
+        transform: translateY(1px);
+    }
+
+    .professor-badge {
+        @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border;
+        background-color: var(--excel-tint);
+        color: var(--excel-dark);
+        border-color: rgba(16, 124, 65, 0.2);
+    }
+
+    .portal-container {
+        @apply bg-white border border-[--border-color] rounded-lg overflow-hidden;
+        box-shadow: 0 12px 35px rgba(16, 124, 65, 0.1);
+    }
+
+    .sheet-tabs-bar {
+        @apply flex bg-[#f3f3f3] border-t border-gray-200;
+    }
+}
