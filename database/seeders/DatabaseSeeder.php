@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
     {
         $professor = User::factory()->create([
             'name' => 'Professor',
-            'email' => 'hoheckell.info@gmail.com',
+            'email' => 'teste@gmail.com',
             'tipo' => 'professor',
             'autorizado' => true,
         ]);
