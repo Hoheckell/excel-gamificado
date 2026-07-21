@@ -39,6 +39,8 @@ Route::middleware([
 
     Route::post('equipes/{equipe}/add-points', [EquipeController::class, 'addPoints'])->name('equipes.addPoints');
     Route::post('equipes/{equipe}/remove-points', [EquipeController::class, 'removePoints'])->name('equipes.removePoints');
+    Route::post('equipes/{equipe}/badges', [EquipeController::class, 'concederBadge'])->name('equipes.badges.store');
+    Route::delete('equipes/{equipe}/badges/{badge}', [EquipeController::class, 'removerBadge'])->name('equipes.badges.destroy');
     Route::post('equipes/{equipe}/add-aluno', [EquipeController::class, 'addAluno'])->name('equipes.addAluno');
     Route::post('equipes/{equipe}/remove-aluno', [EquipeController::class, 'removeAluno'])->name('equipes.removeAluno');
     Route::post('equipes/criar-por-aluno', [EquipeController::class, 'criarPorAluno'])->name('equipes.criarPorAluno');

@@ -1,38 +1,23 @@
 const { test, expect } = require('@playwright/test');
 
-const BASE = 'http://localhost:8989';
-const PROF_EMAIL = 'hoheckell.info@gmail.com';
-const PROF_PASS = 'password';
-
-async function ensureLoggedIn(page) {
-  await page.goto(BASE + '/dashboard');
-  if (page.url().includes('/login')) {
-    await page.getByLabel('E-mail').fill(PROF_EMAIL);
-    await page.getByLabel('Senha').fill(PROF_PASS);
-    await page.getByRole('button', { name: 'Entrar' }).click();
-    await page.waitForLoadState('networkidle');
-  }
-  await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
-}
-
-test.describe('Páginas Públicas', () => {
+test.describe('Páginas Públicas', { tag: '@public' }, () => {
   test('Welcome', async ({ page }) => {
-    await page.goto(BASE);
+    await page.goto('/');
     await expect(page).toHaveTitle('Excel Workshop');
     await expect(page.locator('h1')).toContainText('Curso de Excel');
     await expect(page.getByText('Sistema Pedagógico')).toBeVisible();
   });
 
   test('Login', async ({ page }) => {
-    await page.goto(BASE + '/login');
+    await page.goto('/login');
     await expect(page.getByLabel('E-mail')).toBeVisible();
     await expect(page.getByLabel('Senha')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
   });
 });
 
-test.describe('Telas Autenticadas', () => {
-  test.beforeEach(async ({ page }) => { await ensureLoggedIn(page); });
+test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/dashboard'); });
 
   test('Dashboard, Alunos, Equipes', async ({ page }) => {
     await expect(page.getByText('Painel Operacional')).toBeVisible();
@@ -60,10 +45,41 @@ test.describe('Telas Autenticadas', () => {
     await page.getByRole('link', { name: 'Regras' }).click();
     await expect(page.getByRole('heading', { name: 'Regras do Sistema' })).toBeVisible();
 
-    await page.goto(BASE + '/certificado-modelo');
+    await page.goto('/certificado-modelo');
     await expect(page.getByText('Certificado de Conquista')).toBeVisible();
 
-    await page.goto(BASE + '/certificados/emitir');
+    await page.goto('/certificados/emitir');
     await expect(page.locator('h2').filter({ hasText: 'Emitir Certificado' })).toBeVisible();
+  });
+
+  test('Missões exibem título, ordem e pontuação', async ({ page }) => {
+    await page.getByRole('link', { name: 'Missões' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Missões', exact: true })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Nova Missão' }).click();
+    await expect(page.getByLabel('Título da Missão')).toHaveValue('Missão Prática');
+    await expect(page.getByLabel('Ordem cronológica')).toHaveValue('1');
+    await expect(page.getByLabel('Descrição da Missão')).toBeVisible();
+    await expect(page.getByLabel('Pontuação')).toHaveValue('100');
+  });
+
+  test('Placar exibe XP, Zequinhômetro e vitrine de badges', async ({ page }) => {
+    await page.goto('/placar');
+    await expect(page.getByRole('heading', { name: 'Placar Geral' })).toBeVisible();
+    await expect(page.getByText('Humor do Juvenildo')).toBeVisible();
+    await expect(page.getByText('pontos / 500').first()).toBeVisible();
+
+    for (const badge of ['Zero Mouse', 'Código Limpo', 'Visual Executivo', 'Salva-Vidas']) {
+      await expect(page.getByText(badge).first()).toBeVisible();
+    }
+  });
+
+  test('Regras documentam economia de XP e rodízio de papéis', async ({ page }) => {
+    await page.getByRole('link', { name: 'Regras' }).click();
+    await expect(page.getByText('Meta Máxima: 500 Pontos')).toBeVisible();
+    await expect(page.getByText('Arquiteto de Dados', { exact: true })).toBeVisible();
+    await expect(page.getByText('Auditor de Qualidade', { exact: true })).toBeVisible();
+    await expect(page.getByText('Designer Visual', { exact: true })).toBeVisible();
+    await expect(page.getByText('Gestor de Entregas', { exact: true })).toBeVisible();
   });
 });

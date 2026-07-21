@@ -14,11 +14,14 @@ class Missao extends Model
     protected $table = 'missoes';
 
     protected $fillable = [
+        'titulo',
+        'ordem',
         'descricao',
         'pontuacao',
     ];
 
     protected $casts = [
+        'ordem' => 'integer',
         'pontuacao' => 'integer',
     ];
 

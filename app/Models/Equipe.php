@@ -32,9 +32,33 @@ class Equipe extends Model
         return $this->hasMany(User::class, 'equipe_id');
     }
     public function missoes(): BelongsToMany
-{
-    return $this->belongsToMany(Missao::class, 'equipes_missoes')
-                ->using(EquipeMissao::class) // Usa nosso Model Pivot personalizado
-                ->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Missao::class, 'equipes_missoes')
+            ->using(EquipeMissao::class)
+            ->withTimestamps();
+    }
+
+    public function badges(): BelongsToMany
+    {
+        return $this->belongsToMany(Badge::class, 'equipe_badge')->withTimestamps();
+    }
+
+    public function progressos(): HasMany
+    {
+        return $this->hasMany(EquipeMissaoUser::class);
+    }
+
+    public function getXpTotalAttribute(): int
+    {
+        $xpMissoes = $this->progressos()
+            ->whereNotNull('pontuacao_obtida')
+            ->selectRaw('missao_id, MAX(pontuacao_obtida) as pontos')
+            ->groupBy('missao_id')
+            ->get()
+            ->sum('pontos');
+
+        $xpBadges = $this->badges()->sum('pontos_bonus');
+
+        return max(0, (int) $this->pontuacao) + (int) $xpMissoes + (int) $xpBadges;
+    }
 }

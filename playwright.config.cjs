@@ -1,4 +1,5 @@
 const { defineConfig, devices } = require('@playwright/test');
+const path = require('path');
 
 module.exports = defineConfig({
   testDir: './tests/Playwright',
@@ -16,8 +17,24 @@ module.exports = defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'auth-setup',
+      testMatch: /auth\.setup\.cjs/,
+    },
+    {
+      name: 'chromium-public',
       use: { ...devices['Desktop Chrome'] },
+      grep: /@public/,
+      testIgnore: /auth\.setup\.cjs/,
+    },
+    {
+      name: 'chromium-authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: path.join(__dirname, 'test-results/.auth/professor.json'),
+      },
+      dependencies: ['auth-setup'],
+      grep: /@authenticated/,
+      testIgnore: /auth\.setup\.cjs/,
     },
   ],
   webServer: {

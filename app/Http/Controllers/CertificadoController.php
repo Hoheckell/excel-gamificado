@@ -51,7 +51,7 @@ class CertificadoController extends Controller
             $professor = $turma->professores()->first();
         }
 
-        $categoria = $equipe ? Categoria::paraPontuacao($equipe->pontuacao) : null;
+        $categoria = $equipe ? Categoria::paraPontuacao($equipe->xp_total) : null;
 
         return view('certificados.emitir', compact('user', 'turma', 'equipe', 'categoria', 'professor'));
     }
@@ -78,7 +78,7 @@ class CertificadoController extends Controller
         }
 
         $equipe = $user->equipe;
-        $categoria = $equipe ? Categoria::paraPontuacao($equipe->pontuacao) : null;
+        $categoria = $equipe ? Categoria::paraPontuacao($equipe->xp_total) : null;
         $professor = $turma->professores()->first();
 
         $certificado = Certificado::create([

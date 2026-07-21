@@ -7,6 +7,8 @@ use App\Models\EquipeMissaoUser;
 use App\Models\Missao;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MissaoController extends Controller
@@ -20,7 +22,7 @@ class MissaoController extends Controller
     {
         $missoes = Missao::with('equipes:id,nome')
             ->withCount('equipes')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('ordem')
             ->paginate(15);
 
         return view('missoes.index', compact('missoes'));
@@ -34,6 +36,8 @@ class MissaoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'ordem' => 'required|integer|min:1',
             'descricao' => 'required|string|max:5000',
             'pontuacao' => 'required|integer|min:1|max:500',
         ]);
@@ -58,6 +62,8 @@ class MissaoController extends Controller
     public function update(Request $request, Missao $missao): RedirectResponse
     {
         $validated = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'ordem' => 'required|integer|min:1',
             'descricao' => 'required|string|max:5000',
             'pontuacao' => 'required|integer|min:1|max:500',
         ]);
@@ -110,6 +116,8 @@ class MissaoController extends Controller
         $validated = $request->validate([
             'equipe_id' => 'required|exists:equipes,id',
             'missao_id' => 'required|exists:missoes,id',
+            'papeis' => 'required|array',
+            'papeis.*' => ['required', Rule::in(['arquiteto', 'auditor', 'designer', 'gestor'])],
         ]);
 
         $user = $request->user();
@@ -117,17 +125,48 @@ class MissaoController extends Controller
             abort(403);
         }
 
-        EquipeMissaoUser::firstOrCreate(
-            [
-                'equipe_id' => $validated['equipe_id'],
-                'missao_id' => $validated['missao_id'],
-                'user_id' => $user->id,
-            ],
-            [
-                'status' => 'em_andamento',
-                'started_at' => now(),
-            ]
-        );
+        $equipe = Equipe::with('alunos:id,equipe_id')->findOrFail($validated['equipe_id']);
+        $membros = $equipe->alunos->pluck('id')->map(fn ($id) => (string) $id)->sort()->values();
+        $informados = collect(array_keys($validated['papeis']))->map(fn ($id) => (string) $id)->sort()->values();
+
+        if ($membros->values()->all() !== $informados->values()->all()) {
+            return back()->withErrors(['papeis' => 'Defina um papel para todos os membros ativos da equipe.']);
+        }
+
+        $missao = Missao::findOrFail($validated['missao_id']);
+        $missaoAnterior = Missao::where('ordem', $missao->ordem - 1)->first();
+
+        if ($missaoAnterior) {
+            $papeisAnteriores = EquipeMissaoUser::where('equipe_id', $equipe->id)
+                ->where('missao_id', $missaoAnterior->id)
+                ->pluck('papel', 'user_id');
+
+            foreach ($validated['papeis'] as $userId => $papel) {
+                if ($papeisAnteriores->get((int) $userId) === $papel) {
+                    return back()->withErrors([
+                        'papeis' => 'O rodízio exige que cada integrante use um papel diferente da missão anterior.',
+                    ]);
+                }
+            }
+        }
+
+        DB::transaction(function () use ($validated, $equipe): void {
+            foreach ($validated['papeis'] as $userId => $papel) {
+                EquipeMissaoUser::updateOrCreate(
+                    [
+                        'equipe_id' => $equipe->id,
+                        'missao_id' => $validated['missao_id'],
+                        'user_id' => $userId,
+                    ],
+                    [
+                        'papel' => $papel,
+                        'status' => 'em_andamento',
+                        'started_at' => now(),
+                        'finished_at' => null,
+                    ]
+                );
+            }
+        });
 
         return back()->with('success', 'Missão iniciada!');
     }
@@ -164,14 +203,16 @@ class MissaoController extends Controller
 
     public function pontuar(Request $request): RedirectResponse
     {
-        $this->authorize('atribuirEquipes', Missao::findOrFail($request->missao_id));
-
         $validated = $request->validate([
             'registro_id' => 'required|exists:equipe_missao_user,id',
             'pontuacao' => 'required|integer|min:0',
         ]);
 
         $registro = EquipeMissaoUser::findOrFail($validated['registro_id']);
+        $this->authorize('atribuirEquipes', $registro->missao);
+        if ($validated['pontuacao'] > $registro->missao->pontuacao) {
+            return back()->withErrors(['pontuacao' => 'A pontuação não pode superar o valor da missão.']);
+        }
         $registro->update(['pontuacao_obtida' => $validated['pontuacao']]);
 
         return back()->with('success', 'Pontuação atribuída.');

@@ -139,14 +139,39 @@
                                         @if ($user->isAluno() && $user->equipe_id === $equipe->id)
                                             <div class="flex items-center gap-2">
                                                 @if (! $meuProgresso || $meuProgresso->status === 'pendente')
-                                                    <form method="POST" action="{{ route('missoes.iniciar') }}" class="inline">
-                                                        @csrf
-                                                        <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
-                                                        <input type="hidden" name="missao_id" value="{{ $missao->id }}">
-                                                        <button class="text-[10px] font-bold px-2.5 py-1 rounded bg-excel-dark text-white hover:bg-excel-light transition">
-                                                            Iniciar
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" onclick="document.getElementById('papeisModal{{ $equipe->id }}_{{ $missao->id }}').classList.remove('hidden')" class="text-[10px] font-bold px-2.5 py-1 rounded bg-excel-dark text-white hover:bg-excel-light transition">
+                                                        Definir papéis e iniciar
+                                                    </button>
+
+                                                    <div id="papeisModal{{ $equipe->id }}_{{ $missao->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                                        <div class="bg-white rounded-excel w-full max-w-md shadow-xl overflow-hidden text-left">
+                                                            <div class="excel-ribbon px-5 py-3">
+                                                                <h3 class="text-white font-semibold">Papéis — {{ $missao->titulo }}</h3>
+                                                            </div>
+                                                            <form method="POST" action="{{ route('missoes.iniciar') }}" class="p-5 space-y-4">
+                                                                @csrf
+                                                                <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
+                                                                <input type="hidden" name="missao_id" value="{{ $missao->id }}">
+                                                                <p class="text-xs text-[--text-muted]">Escolha o papel de cada integrante. Ninguém pode repetir o papel usado na missão anterior.</p>
+                                                                @foreach($equipe->alunos as $membro)
+                                                                    <label class="block">
+                                                                        <span class="text-xs font-semibold text-[--text-main]">{{ $membro->name }}</span>
+                                                                        <select name="papeis[{{ $membro->id }}]" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                                                            <option value="">Selecione...</option>
+                                                                            <option value="arquiteto">🛠️ Arquiteto de Dados</option>
+                                                                            <option value="auditor">🔍 Auditor de Qualidade</option>
+                                                                            <option value="designer">🎨 Designer Visual</option>
+                                                                            <option value="gestor">⏱️ Gestor de Entregas</option>
+                                                                        </select>
+                                                                    </label>
+                                                                @endforeach
+                                                                <div class="flex justify-end gap-3">
+                                                                    <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button>
+                                                                    <x-button>Iniciar para a equipe</x-button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
                                                 @elseif ($meuProgresso->status === 'em_andamento')
                                                     <form method="POST" action="{{ route('missoes.finalizar') }}" class="inline">
                                                         @csrf

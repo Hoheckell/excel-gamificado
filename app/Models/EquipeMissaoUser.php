@@ -13,7 +13,7 @@ class EquipeMissaoUser extends Model
 
     protected $fillable = [
         'equipe_id', 'missao_id', 'user_id',
-        'status', 'started_at', 'finished_at', 'pontuacao_obtida',
+        'papel', 'status', 'started_at', 'finished_at', 'pontuacao_obtida',
     ];
 
     protected $casts = [

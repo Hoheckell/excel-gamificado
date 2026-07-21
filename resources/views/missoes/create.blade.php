@@ -15,6 +15,18 @@
 
                     <div class="space-y-5">
                         <div>
+                            <x-label for="titulo" value="Título da Missão" />
+                            <x-input id="titulo" class="block mt-1 w-full" type="text" name="titulo" :value="old('titulo', 'Missão Prática')" required />
+                            <x-input-error for="titulo" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <x-label for="ordem" value="Ordem cronológica" />
+                            <x-input id="ordem" class="block mt-1 w-full" type="number" name="ordem" :value="old('ordem', 1)" min="1" required />
+                            <x-input-error for="ordem" class="mt-1" />
+                        </div>
+
+                        <div>
                             <x-label for="descricao" value="Descrição da Missão" />
                             <textarea id="descricao" name="descricao" rows="4" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-[--text-main] bg-white focus:border-excel-dark focus:ring-excel-light text-sm" placeholder="Descreva o desafio da missão...">{{ old('descricao') }}</textarea>
                             <x-input-error for="descricao" class="mt-1" />

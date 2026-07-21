@@ -27,7 +27,8 @@
                     <div class="excel-ribbon px-6 py-4">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
-                                <h3 class="text-white font-semibold text-base">{{ Str::limit($missao->descricao, 120) }}</h3>
+                                <h3 class="text-white font-semibold text-base">{{ $missao->ordem }}. {{ $missao->titulo }}</h3>
+                                <p class="text-white/80 text-xs mt-1">{{ Str::limit($missao->descricao, 120) }}</p>
                                 <div class="flex items-center gap-4 mt-1">
                                     <span class="text-white/70 text-xs">{{ $missao->created_at->format('d/m/Y') }}</span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">

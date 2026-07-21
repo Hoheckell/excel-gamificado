@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Badge;
 use App\Models\Equipe;
 use App\Models\Turma;
 use App\Models\User;
@@ -135,10 +136,29 @@ class EquipeController extends Controller
             'points' => 'required|integer|min:1|max:1000',
         ]);
 
-        $equipe->decrement('pontuacao', $validated['points']);
+        $equipe->update(['pontuacao' => max(0, $equipe->pontuacao - $validated['points'])]);
 
         return redirect()->route('equipes.index')
             ->with('success', "-{$validated['points']} pontos removidos da equipe {$equipe->nome}.");
+    }
+
+    public function concederBadge(Request $request, Equipe $equipe): RedirectResponse
+    {
+        $this->authorize('managePoints', $equipe);
+
+        $validated = $request->validate(['badge_id' => 'required|exists:badges,id']);
+        $badge = Badge::findOrFail($validated['badge_id']);
+        $equipe->badges()->syncWithoutDetaching([$badge->id]);
+
+        return back()->with('success', "Badge {$badge->nome} concedida à equipe {$equipe->nome}.");
+    }
+
+    public function removerBadge(Equipe $equipe, Badge $badge): RedirectResponse
+    {
+        $this->authorize('managePoints', $equipe);
+        $equipe->badges()->detach($badge->id);
+
+        return back()->with('success', "Badge {$badge->nome} removida da equipe {$equipe->nome}.");
     }
 
     // ─── Alunos ──────────────────────────────────────────────────

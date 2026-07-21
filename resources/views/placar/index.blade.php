@@ -3,8 +3,18 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-semibold text-xl text-white leading-tight">Placar Geral</h2>
-                <p class="text-xs text-white/70 mt-0.5 uppercase tracking-wider">Desempenho das equipes</p>
+                <p class="text-xs text-white/70 mt-0.5 uppercase tracking-wider">Iguatu Agro&Comércio — Desempenho das Consultorias</p>
             </div>
+            {{-- Zequinhômetro / Status Global --}}
+            @if(isset($humorChefe))
+            <div class="hidden sm:flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full border border-white/20">
+                <span class="text-2xl">{{ $humorChefe['icone'] ?? '😎' }}</span>
+                <div class="text-right">
+                    <span class="block text-[10px] uppercase font-bold text-white/80 tracking-widest">Humor do Juvenildo</span>
+                    <span class="text-xs font-semibold text-green-300">{{ $humorChefe['texto'] ?? 'Satisfeito com as equipes' }}</span>
+                </div>
+            </div>
+            @endif
         </div>
     </x-slot>
 
@@ -40,18 +50,18 @@
                     @foreach ($equipes as $posicao => $equipe)
                         @php
                             $corCategoria = $equipe->categoria_atual?->cor ?? '#107c41';
-                            $pontos = $equipe->pontuacao;
+                            $pontos = $equipe->xp_total;
                             $larguraBarra = min(100, ($pontos / 500) * 100);
                         @endphp
                         <div class="portal-container">
                             <div class="flex items-stretch">
-                                {{-- Posição --}}
+                                {{-- Posição (Atualizado com Medalhas) --}}
                                 <div class="flex items-center justify-center w-14 shrink-0 rounded-tl-lg rounded-bl-lg" style="background-color: {{ $corCategoria }};">
-                                    <span class="text-white font-bold text-lg">
-                                        @if ($posicao === 0) &#9733;
-                                        @elseif ($posicao === 1) &#9734;
-                                        @elseif ($posicao === 2) &#9733;
-                                        @else {{ $posicao + 1 }}
+                                    <span class="text-white font-bold text-xl">
+                                        @if ($posicao === 0) 🥇
+                                        @elseif ($posicao === 1) 🥈
+                                        @elseif ($posicao === 2) 🥉
+                                        @else {{ $posicao + 1 }}º
                                         @endif
                                     </span>
                                 </div>
@@ -73,20 +83,40 @@
                                             </div>
                                             <div class="text-right shrink-0">
                                                 <span class="text-2xl font-bold" style="color: {{ $corCategoria }};">{{ $pontos }}</span>
-                                                <span class="text-xs text-[--text-muted] block">pontos</span>
+                                                <span class="text-xs text-[--text-muted] block">pontos / 500</span>
                                             </div>
                                         </div>
+
                                         {{-- Barra de progresso --}}
                                         <div class="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                                             <div class="h-full rounded-full transition-all" style="width: {{ $larguraBarra }}%; background-color: {{ $corCategoria }};"></div>
                                         </div>
+
+                                        {{-- Vitrine de conquistas --}}
+                                        @if($badges->isNotEmpty())
+                                            <div class="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                                                @foreach($badges as $badge)
+                                                    @php $conquistada = $equipe->badges->contains($badge->id); @endphp
+                                                    <span class="inline-flex items-center gap-1 text-[10px] border px-2 py-0.5 rounded-full font-semibold {{ $conquistada ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-gray-50 text-gray-400 border-gray-200 opacity-50 grayscale' }}" title="{{ $badge->descricao }}">
+                                                        <span>{{ $badge->icone }}</span> {{ $badge->nome }} <strong class="text-yellow-600 font-mono">+{{ $badge->pontos_bonus }}pts</strong>
+                                                    </span>
+                                                    @can('managePoints', $equipe)
+                                                        @if($conquistada)
+                                                            <form method="POST" action="{{ route('equipes.badges.destroy', [$equipe, $badge]) }}" class="inline">@csrf @method('DELETE')<button class="text-[10px] text-red-500" title="Remover badge">&times;</button></form>
+                                                        @else
+                                                            <form method="POST" action="{{ route('equipes.badges.store', $equipe) }}" class="inline">@csrf<input type="hidden" name="badge_id" value="{{ $badge->id }}"><button class="text-[10px] text-excel-dark font-bold" title="Conceder badge">+</button></form>
+                                                        @endif
+                                                    @endcan
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </div>
 
                                     {{-- Expansão: Membros e Missões --}}
                                     <div x-data="{ open: false }">
                                         <button @click="open = !open"
                                             class="w-full px-5 py-2 flex items-center justify-between text-xs font-semibold text-[--text-muted] hover:bg-[#f8faf8] hover:text-excel-dark transition">
-                                            <span>Ver membros e missões</span>
+                                            <span>Ver membros, papéis e missões</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="transition-transform" :class="open ? 'rotate-180' : ''">
                                                 <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
                                             </svg>
@@ -98,23 +128,39 @@
                                                         <p class="text-xs text-[--text-main] font-medium flex-1 pr-3">{{ Str::limit($missao->descricao, 120) }}</p>
                                                         <span class="text-[10px] font-bold text-excel-dark bg-excel-tint px-2 py-0.5 rounded-full shrink-0">{{ $missao->pontuacao }}pts</span>
                                                     </div>
-                                                    <div class="space-y-1">
+                                                    <div class="space-y-1.5">
                                                         @foreach ($missao->progresso as $p)
                                                             <div class="flex items-center justify-between text-[10px]">
                                                                 <span class="text-[--text-muted] flex items-center gap-1.5">
                                                                     <span class="w-4 h-4 rounded-full bg-excel-tint text-excel-dark flex items-center justify-center text-[7px] font-bold">
                                                                         {{ strtoupper(substr($p->user->name ?? '?', 0, 1)) }}
                                                                     </span>
-                                                                    {{ $p->user->name ?? '—' }}
+                                                                    <strong class="text-[--text-main]">{{ $p->user->name ?? '—' }}</strong>
+                                                                    
+                                                                    {{-- Tag com o Papel de RPG do Aluno --}}
+                                                                    @if(!empty($p->papel))
+                                                                        @php
+                                                                            $iconePapel = match($p->papel) {
+                                                                                'arquiteto' => '🛠️',
+                                                                                'auditor' => '🔍',
+                                                                                'designer' => '🎨',
+                                                                                'gestor' => '⏱️',
+                                                                                default => '👔'
+                                                                            };
+                                                                        @endphp
+                                                                        <span class="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-600 font-mono text-[9px]" title="Função na rodada">
+                                                                            {{ $iconePapel }} {{ ucfirst($p->papel) }}
+                                                                        </span>
+                                                                    @endif
                                                                 </span>
                                                                 <span>
                                                                     @if ($p->status === 'concluida')
                                                                         <span class="text-green-700 font-semibold">{{ $p->duracao }}</span>
                                                                         @if ($p->pontuacao_obtida !== null)
-                                                                            <span class="text-excel-dark font-bold ml-1.5">{{ $p->pontuacao_obtida }}pts</span>
+                                                                            <span class="text-excel-dark font-bold ml-1.5">+{{ $p->pontuacao_obtida }}pts</span>
                                                                         @endif
                                                                     @elseif ($p->status === 'em_andamento')
-                                                                        <span class="text-orange-500">Em andamento</span>
+                                                                        <span class="text-orange-500 font-medium">Em andamento...</span>
                                                                     @else
                                                                         <span class="text-[--text-muted]">Pendente</span>
                                                                     @endif
@@ -133,6 +179,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                
                             </div>
                         </div>
                     @endforeach
