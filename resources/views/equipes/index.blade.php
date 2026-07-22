@@ -33,6 +33,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if ($errors->any() || session('error'))
+            <div class="mb-6 px-5 py-3 bg-red-50 border border-red-200 text-red-700 rounded-excel text-sm">
+                {{ session('error') ?? $errors->first() }}
+            </div>
+        @endif
 
         {{-- Filtros --}}
         <div class="portal-container mb-6">
@@ -115,8 +120,14 @@
                                 @foreach ($equipe->missoes as $missao)
                                     @php
                                         $meuProgresso = $missao->progresso->firstWhere('user_id', $user->id);
-                                        $progressos = $missao->progresso->where('equipe_id', $equipe->id);
-                                        $todosConcluiram = $progressos->isNotEmpty() && $progressos->every(fn($p) => $p->status === 'concluida');
+                                        $membrosAtivos = $equipe->alunos->pluck('id');
+                                        $progressos = $missao->progresso
+                                            ->where('equipe_id', $equipe->id)
+                                            ->whereIn('user_id', $membrosAtivos);
+                                        $ausentes = $progressos->where('status', 'ausente')->pluck('user_id');
+                                        $membrosPresentes = $membrosAtivos->diff($ausentes);
+                                        $todosConcluiram = $membrosPresentes->isNotEmpty()
+                                            && $progressos->whereIn('user_id', $membrosPresentes)->where('status', 'concluida')->count() === $membrosPresentes->count();
                                         $tempoMedio = null;
                                         if ($todosConcluiram) {
                                             $segundos = (int) $progressos->avg(fn($p) => $p->duracao_segundos);
@@ -153,7 +164,7 @@
                                                                 <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
                                                                 <input type="hidden" name="missao_id" value="{{ $missao->id }}">
                                                                 <p class="text-xs text-[--text-muted]">Escolha o papel de cada integrante. Ninguém pode repetir o papel usado na missão anterior.</p>
-                                                                @foreach($equipe->alunos as $membro)
+                                                                @foreach($equipe->alunos->whereNotIn('id', $ausentes) as $membro)
                                                                     <label class="block">
                                                                         <span class="text-xs font-semibold text-[--text-main]">{{ $membro->name }}</span>
                                                                         <select name="papeis[{{ $membro->id }}]" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
@@ -190,8 +201,66 @@
                                                     @if ($meuProgresso->pontuacao_obtida !== null)
                                                         <span class="text-[10px] font-bold text-excel-dark">{{ $meuProgresso->pontuacao_obtida }}/{{ $missao->pontuacao }}pts</span>
                                                     @endif
+                                                @elseif ($meuProgresso->status === 'ausente')
+                                                    <span class="text-[10px] font-semibold text-red-600">Ausente nesta missão</span>
                                                 @endif
                                             </div>
+
+                                            @php
+                                                $candidatosFalta = $equipe->alunos
+                                                    ->where('id', '!=', $user->id)
+                                                    ->reject(fn ($membro) => in_array(optional($progressos->firstWhere('user_id', $membro->id))->status, ['ausente', 'concluida']));
+                                                $missaoIniciada = $progressos->contains(fn ($p) => in_array($p->status, ['em_andamento', 'concluida']));
+                                            @endphp
+                                            @if ($missaoIniciada && $candidatosFalta->isNotEmpty())
+                                                <button type="button" onclick="document.getElementById('faltaMissaoModal{{ $equipe->id }}_{{ $missao->id }}').classList.remove('hidden')" class="text-[10px] font-semibold text-red-600 underline">Comunicar falta</button>
+                                                <div id="faltaMissaoModal{{ $equipe->id }}_{{ $missao->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                                    <div class="bg-white rounded-excel w-full max-w-sm shadow-xl overflow-hidden text-left">
+                                                        <div class="bg-red-600 px-5 py-3"><h3 class="text-white font-semibold">Comunicar falta</h3></div>
+                                                        <form method="POST" action="{{ route('missoes.comunicarFalta') }}" class="p-5 space-y-4" onsubmit="return confirm('Confirmar esta falta? Esta ação não poderá ser desfeita.')">
+                                                            @csrf
+                                                            <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
+                                                            <input type="hidden" name="missao_id" value="{{ $missao->id }}">
+                                                            <p class="text-xs text-[--text-muted]">Missão: <strong>{{ $missao->titulo }}</strong></p>
+                                                            <select name="user_id" required class="block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                                                <option value="">Selecione o integrante ausente...</option>
+                                                                @foreach ($candidatosFalta as $membro)
+                                                                    <option value="{{ $membro->id }}">{{ $membro->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <p class="text-xs font-semibold text-red-600">Atenção: esta ação não poderá ser desfeita.</p>
+                                                            <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-danger-button>Confirmar falta</x-danger-button></div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if ($todosConcluiram && ($missao->permite_resposta || $missao->permite_anexo))
+                                                @if (! $missao->pivot->resposta && ! $missao->pivot->anexo_path)
+                                                    <button type="button" onclick="document.getElementById('entregaModal{{ $missao->pivot->id }}').classList.remove('hidden')" class="text-[10px] font-bold px-2.5 py-1 rounded bg-excel-dark text-white hover:bg-excel-light transition">
+                                                        Enviar entrega da equipe
+                                                    </button>
+                                                    <div id="entregaModal{{ $missao->pivot->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                                        <div class="bg-white rounded-excel w-full max-w-md shadow-xl overflow-hidden text-left">
+                                                            <div class="excel-ribbon px-5 py-3"><h3 class="text-white font-semibold">Entrega — {{ $missao->titulo }}</h3></div>
+                                                            <form method="POST" action="{{ route('missoes.entregar') }}" enctype="multipart/form-data" class="p-5 space-y-4">
+                                                                @csrf
+                                                                <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
+                                                                <input type="hidden" name="missao_id" value="{{ $missao->id }}">
+                                                                @if ($missao->permite_resposta)
+                                                                    <div><x-label for="resposta{{ $missao->pivot->id }}" value="Resposta (opcional)" /><textarea id="resposta{{ $missao->pivot->id }}" name="resposta" rows="4" maxlength="5000" class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light" placeholder="Digite a resposta da equipe..."></textarea></div>
+                                                                @endif
+                                                                @if ($missao->permite_anexo)
+                                                                    <div><x-label for="anexo{{ $missao->pivot->id }}" value="Anexo (opcional, até 10 MB)" /><input id="anexo{{ $missao->pivot->id }}" type="file" name="anexo" class="mt-1 block w-full text-xs text-[--text-muted] file:mr-3 file:rounded file:border-0 file:bg-excel-tint file:px-3 file:py-2 file:text-xs file:font-semibold file:text-excel-dark"></div>
+                                                                @endif
+                                                                <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-button>Enviar entrega</x-button></div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] font-semibold text-green-700">Entrega da equipe enviada</span>
+                                                @endif
+                                            @endif
                                         @endif
 
                                         {{-- Visão do professor: progresso dos alunos + botão pontuar --}}
@@ -219,6 +288,8 @@
                                                                 @endif
                                                             @elseif ($p && $p->status === 'em_andamento')
                                                                 <span class="text-orange-500">Em andamento</span>
+                                                            @elseif ($p && $p->status === 'ausente')
+                                                                <span class="font-semibold text-red-600">Ausente</span>
                                                             @else
                                                                 <span class="text-[--text-muted]">Pendente</span>
                                                             @endif
@@ -248,9 +319,19 @@
                                                     </div>
                                                     @endif
                                                 @endforeach
+                                                @if ($missao->pivot->resposta || $missao->pivot->anexo_path)
+                                                    <div class="rounded bg-white/70 px-2 py-1.5 text-[10px] text-[--text-main]">
+                                                        @if ($missao->pivot->resposta)
+                                                            <p class="whitespace-pre-line"><strong>Resposta da equipe:</strong> {{ $missao->pivot->resposta }}</p>
+                                                        @endif
+                                                        @if ($missao->pivot->anexo_path)
+                                                            <a href="{{ route('missoes.anexo', $missao->pivot->id) }}" class="font-semibold text-excel-dark underline">Baixar anexo: {{ $missao->pivot->anexo_nome_original }}</a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                                 @php
-                                                    $concluidos = $missao->progresso->where('equipe_id', $equipe->id)->where('status', 'concluida');
-                                                    $todosConcluiram = $equipe->alunos->isNotEmpty() && $concluidos->count() === $equipe->alunos->count();
+                                                    $concluidos = $progressos->where('status', 'concluida');
+                                                    $todosConcluiram = $membrosPresentes->isNotEmpty() && $concluidos->count() === $membrosPresentes->count();
                                                     $tempoMedio = null;
                                                     if ($todosConcluiram) {
                                                         $segundos = (int) $concluidos->avg(fn($p) => $p->duracao_segundos);
@@ -275,10 +356,12 @@
                     {{-- Ações --}}
                     <div class="border-t border-[--border-light] px-5 py-3 flex flex-wrap items-center gap-2">
                         @if ($user->isAluno() && $user->equipe_id === $equipe->id)
-                            <button onclick="document.getElementById('sairEquipeModal{{ $equipe->id }}').classList.remove('hidden')"
-                                class="text-xs text-red-500 hover:text-red-600 transition font-medium">
-                                Sair da Equipe
-                            </button>
+                            <div class="flex flex-col items-start gap-1">
+                                <button onclick="document.getElementById('sairEquipeModal{{ $equipe->id }}').classList.remove('hidden')" class="text-xs text-red-500 hover:text-red-600 transition font-medium">Sair da Equipe</button>
+                                @if ($equipe->missoes->isNotEmpty() && $equipe->alunos->where('id', '!=', $user->id)->isNotEmpty())
+                                    <button onclick="document.getElementById('faltaGeralModal{{ $equipe->id }}').classList.remove('hidden')" class="text-xs text-red-500 hover:text-red-600 transition font-medium">Comunicar falta</button>
+                                @endif
+                            </div>
 
                             {{-- Modal Sair da Equipe --}}
                             <div id="sairEquipeModal{{ $equipe->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
@@ -298,6 +381,33 @@
                                             <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-xs text-[--text-muted] hover:text-excel-dark transition">Cancelar</button>
                                             <x-danger-button class="text-xs px-3 py-1.5">Sair</x-danger-button>
                                         </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            {{-- Modal geral para comunicar falta antes ou depois do início --}}
+                            <div id="faltaGeralModal{{ $equipe->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                <div class="bg-white rounded-excel w-full max-w-sm shadow-xl overflow-hidden">
+                                    <div class="bg-red-600 px-5 py-3"><h3 class="text-white font-semibold">Comunicar falta</h3></div>
+                                    <form method="POST" action="{{ route('missoes.comunicarFalta') }}" class="p-5 space-y-4" onsubmit="return confirm('Confirmar esta falta? Esta ação não poderá ser desfeita.')">
+                                        @csrf
+                                        <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
+                                        <div>
+                                            <x-label for="faltaMissao{{ $equipe->id }}" value="Missão" />
+                                            <select id="faltaMissao{{ $equipe->id }}" name="missao_id" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                                <option value="">Selecione a missão...</option>
+                                                @foreach ($equipe->missoes as $missaoOpcao)<option value="{{ $missaoOpcao->id }}">{{ $missaoOpcao->titulo }}</option>@endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <x-label for="faltaMembro{{ $equipe->id }}" value="Integrante ausente" />
+                                            <select id="faltaMembro{{ $equipe->id }}" name="user_id" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                                <option value="">Selecione o integrante...</option>
+                                                @foreach ($equipe->alunos->where('id', '!=', $user->id) as $membro)<option value="{{ $membro->id }}">{{ $membro->name }}</option>@endforeach
+                                            </select>
+                                        </div>
+                                        <p class="text-xs font-semibold text-red-600">Atenção: esta ação não poderá ser desfeita.</p>
+                                        <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-danger-button>Confirmar falta</x-danger-button></div>
                                     </form>
                                 </div>
                             </div>

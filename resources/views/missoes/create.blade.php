@@ -38,6 +38,24 @@
                             <p class="text-xs text-[--text-muted] mt-1">Valor em pontos que a equipe recebe ao concluir (1 a 500).</p>
                             <x-input-error for="pontuacao" class="mt-1" />
                         </div>
+
+                        <div class="space-y-3 rounded-excel border border-[--border-light] bg-[#f8faf8] p-4">
+                            <p class="text-sm font-semibold text-[--text-main]">Entrega do aluno</p>
+                            <label class="flex items-start gap-3">
+                                <input type="checkbox" name="permite_resposta" value="1" @checked(old('permite_resposta')) class="mt-0.5 rounded border-[--border-light] text-excel-dark focus:ring-excel-light">
+                                <span>
+                                    <span class="block text-sm text-[--text-main]">Permitir resposta textual</span>
+                                    <span class="block text-xs text-[--text-muted]">O aluno poderá escrever uma resposta opcional ao concluir.</span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-3">
+                                <input type="checkbox" name="permite_anexo" value="1" @checked(old('permite_anexo')) class="mt-0.5 rounded border-[--border-light] text-excel-dark focus:ring-excel-light">
+                                <span>
+                                    <span class="block text-sm text-[--text-main]">Permitir anexo</span>
+                                    <span class="block text-xs text-[--text-muted]">O aluno poderá enviar um arquivo opcional de até 10 MB.</span>
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-end mt-6 gap-4">

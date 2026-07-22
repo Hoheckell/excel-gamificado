@@ -18,7 +18,7 @@ class EquipeController extends Controller
         $query = Equipe::with([
             'turma:id,codigo,descricao',
             'alunos:id,name,equipe_id',
-            'missoes:id,descricao,pontuacao',
+            'missoes:id,titulo,descricao,pontuacao,permite_resposta,permite_anexo',
             'missoes.progresso',
         ]);
 
@@ -27,7 +27,7 @@ class EquipeController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('nome', 'like', '%' . $request->search . '%');
+            $query->where('nome', 'like', '%'.$request->search.'%');
         }
 
         $equipes = $query->orderBy('nome')->paginate(20);
@@ -240,7 +240,7 @@ class EquipeController extends Controller
             ->toArray();
 
         if (! empty($alunosComEquipe)) {
-            return back()->with('error', 'Os seguintes alunos já estão em uma equipe: ' . implode(', ', $alunosComEquipe));
+            return back()->with('error', 'Os seguintes alunos já estão em uma equipe: '.implode(', ', $alunosComEquipe));
         }
 
         $equipe = Equipe::create([
@@ -252,7 +252,7 @@ class EquipeController extends Controller
         User::whereIn('id', $alunoIds)->update(['equipe_id' => $equipe->id]);
 
         return redirect()->route('equipes.index')
-            ->with('success', "Equipe {$equipe->nome} criada com " . count($alunoIds) . " alunos.");
+            ->with('success', "Equipe {$equipe->nome} criada com ".count($alunoIds).' alunos.');
     }
 
     public function sairDaEquipe(Request $request): RedirectResponse

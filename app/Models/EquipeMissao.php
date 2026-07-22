@@ -15,5 +15,18 @@ class EquipeMissao extends Pivot
     protected $fillable = [
         'equipe_id',
         'missao_id',
+        'resposta',
+        'anexo_path',
+        'anexo_nome_original',
     ];
+
+    public function equipe()
+    {
+        return $this->belongsTo(Equipe::class);
+    }
+
+    public function missao()
+    {
+        return $this->belongsTo(Missao::class);
+    }
 }

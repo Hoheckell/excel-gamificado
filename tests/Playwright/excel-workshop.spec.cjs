@@ -56,6 +56,11 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await page.getByRole('link', { name: 'Missões' }).first().click();
     await expect(page.getByRole('heading', { name: 'Missões', exact: true })).toBeVisible();
 
+    await page.getByRole('link', { name: 'Editar' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Editar Missão' })).toBeVisible();
+    await expect(page.getByLabel('Título da Missão')).not.toHaveValue('');
+
+    await page.getByRole('link', { name: 'Missões' }).first().click();
     await page.getByRole('link', { name: 'Nova Missão' }).click();
     await expect(page.getByLabel('Título da Missão')).toHaveValue('Missão Prática');
     await expect(page.getByLabel('Ordem cronológica')).toHaveValue('1');

@@ -17,6 +17,17 @@
                     <p class="text-[--text-main] leading-relaxed">{{ $missao->descricao }}</p>
                 </div>
 
+                @if ($missao->permite_resposta || $missao->permite_anexo)
+                    <div class="mb-6 flex flex-wrap gap-2">
+                        @if ($missao->permite_resposta)
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-excel-tint text-excel-dark">Resposta textual opcional</span>
+                        @endif
+                        @if ($missao->permite_anexo)
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-excel-tint text-excel-dark">Anexo opcional</span>
+                        @endif
+                    </div>
+                @endif
+
                 <h3 class="font-semibold text-sm text-[--text-main] mb-3">Equipes vinculadas ({{ $missao->equipes->count() }})</h3>
                 @if ($missao->equipes->isNotEmpty())
                     <div class="flex flex-wrap gap-2">

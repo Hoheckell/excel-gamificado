@@ -20,6 +20,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if ($errors->any() || session('error'))
+            <div class="mb-6 px-5 py-3 bg-red-50 border border-red-200 text-red-700 rounded-excel text-sm">
+                {{ session('error') ?? $errors->first() }}
+            </div>
+        @endif
 
         <div class="space-y-4">
             @forelse ($missoes as $missao)
@@ -111,6 +116,41 @@
                                 </div>
                             </div>
                         @endcan
+
+                        @php
+                            $alunoLogado = auth()->user();
+                            $equipeDoAluno = $alunoLogado->isAluno() && $alunoLogado->equipe_id
+                                ? $missao->equipes->firstWhere('id', $alunoLogado->equipe_id)
+                                : null;
+                            $progressosEquipe = $equipeDoAluno
+                                ? $missao->progresso->where('equipe_id', $equipeDoAluno->id)
+                                : collect();
+                            $missaoIniciada = $progressosEquipe->contains(fn ($p) => in_array($p->status, ['em_andamento', 'concluida']));
+                            $idsIndisponiveis = $progressosEquipe->whereIn('status', ['ausente', 'concluida'])->pluck('user_id');
+                            $candidatosFalta = $equipeDoAluno
+                                ? $equipeDoAluno->alunos->where('id', '!=', $alunoLogado->id)->whereNotIn('id', $idsIndisponiveis)
+                                : collect();
+                        @endphp
+                        @if ($missaoIniciada && $candidatosFalta->isNotEmpty())
+                            <button type="button" onclick="document.getElementById('faltaNaMissaoModal{{ $missao->id }}').classList.remove('hidden')" class="mt-3 block text-xs font-semibold text-red-600 hover:text-red-700 transition">Comunicar falta</button>
+                            <div id="faltaNaMissaoModal{{ $missao->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                <div class="bg-white rounded-excel w-full max-w-sm shadow-xl overflow-hidden text-left">
+                                    <div class="bg-red-600 px-5 py-3"><h3 class="text-white font-semibold">Comunicar falta</h3></div>
+                                    <form method="POST" action="{{ route('missoes.comunicarFalta') }}" class="p-5 space-y-4" onsubmit="return confirm('Confirmar esta falta? Esta ação não poderá ser desfeita.')">
+                                        @csrf
+                                        <input type="hidden" name="equipe_id" value="{{ $equipeDoAluno->id }}">
+                                        <input type="hidden" name="missao_id" value="{{ $missao->id }}">
+                                        <p class="text-xs text-[--text-muted]">Selecione quem não está presente na missão <strong>{{ $missao->titulo }}</strong>.</p>
+                                        <select name="user_id" required class="block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                            <option value="">Selecione o integrante ausente...</option>
+                                            @foreach ($candidatosFalta as $membro)<option value="{{ $membro->id }}">{{ $membro->name }}</option>@endforeach
+                                        </select>
+                                        <p class="text-xs font-semibold text-red-600">Atenção: esta ação não poderá ser desfeita.</p>
+                                        <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-danger-button>Confirmar falta</x-danger-button></div>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @empty

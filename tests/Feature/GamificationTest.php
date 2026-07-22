@@ -10,6 +10,8 @@ use App\Models\Missao;
 use App\Models\Turma;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class GamificationTest extends TestCase
@@ -145,6 +147,186 @@ class GamificationTest extends TestCase
         $this->assertDatabaseMissing('equipe_missao_user', ['missao_id' => $current->id]);
     }
 
+    public function test_team_cannot_send_mission_submission_before_every_member_finishes(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1, 100, true, true);
+        $equipe->missoes()->attach($missao);
+        foreach ($members as $index => $member) {
+            EquipeMissaoUser::create([
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'user_id' => $member->id,
+                'papel' => $index ? 'auditor' : 'arquiteto',
+                'status' => $index ? 'em_andamento' : 'concluida',
+            ]);
+        }
+
+        $this->actingAs($members[0])->from(route('equipes.index'))->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Resposta antecipada',
+        ])->assertRedirect(route('equipes.index'))->assertSessionHasErrors('entrega');
+
+        $this->assertDatabaseMissing('equipes_missoes', [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Resposta antecipada',
+        ]);
+    }
+
+    public function test_team_can_send_text_and_attachment_after_every_member_finishes(): void
+    {
+        Storage::fake('local');
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1, 100, true, true);
+        $equipe->missoes()->attach($missao);
+        foreach ($members as $index => $member) {
+            EquipeMissaoUser::create([
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'user_id' => $member->id,
+                'papel' => $index ? 'auditor' : 'arquiteto',
+                'status' => 'concluida',
+            ]);
+        }
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Planilha finalizada e conferida.',
+            'anexo' => UploadedFile::fake()->create('resultado.xlsx', 100),
+        ])->assertSessionHasNoErrors();
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertSame('Planilha finalizada e conferida.', $entrega->resposta);
+        $this->assertSame('resultado.xlsx', $entrega->anexo_nome_original);
+        Storage::disk('local')->assertExists($entrega->anexo_path);
+    }
+
+    public function test_absence_reported_before_start_is_preserved_and_role_is_only_required_for_present_members(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(3);
+        $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
+
+        $this->actingAs($members[0])->post(route('missoes.comunicarFalta'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[2]->id,
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($members[0])->post(route('missoes.iniciar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'papeis' => [
+                $members[0]->id => 'arquiteto',
+                $members[1]->id => 'auditor',
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('equipe_missao_user', [
+            'missao_id' => $missao->id,
+            'user_id' => $members[2]->id,
+            'status' => 'ausente',
+        ]);
+    }
+
+    public function test_absent_member_does_not_block_team_submission_and_absence_cannot_be_replaced(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1, 100, true);
+        $equipe->missoes()->attach($missao);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'papel' => 'arquiteto',
+            'status' => 'concluida',
+        ]);
+
+        $payload = [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[1]->id,
+        ];
+        $this->actingAs($members[0])->post(route('missoes.comunicarFalta'), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Entrega da equipe presente.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($members[0])->from(route('equipes.index'))
+            ->post(route('missoes.comunicarFalta'), $payload)
+            ->assertRedirect(route('equipes.index'))
+            ->assertSessionHasErrors('falta');
+        $this->assertDatabaseHas('equipe_missao_user', [
+            'missao_id' => $missao->id,
+            'user_id' => $members[1]->id,
+            'status' => 'ausente',
+        ]);
+        $this->assertDatabaseHas('equipes_missoes', [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Entrega da equipe presente.',
+        ]);
+    }
+
+    public function test_missions_screen_shows_absence_action_to_student_after_mission_starts(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'papel' => 'arquiteto',
+            'status' => 'em_andamento',
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[1]->id,
+            'papel' => 'auditor',
+            'status' => 'em_andamento',
+        ]);
+
+        $this->actingAs($members[0])->get(route('missoes.index'))
+            ->assertOk()
+            ->assertSee('Comunicar falta')
+            ->assertSee($members[1]->name);
+    }
+
+    public function test_professor_can_open_and_submit_mission_edit_form(): void
+    {
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $missao = $this->mission(1);
+
+        $this->actingAs($professor)->get(route('missoes.edit', $missao))
+            ->assertOk()
+            ->assertSee('Editar Missão')
+            ->assertSee($missao->titulo);
+
+        $this->actingAs($professor)->put(route('missoes.update', $missao), [
+            'titulo' => 'Missão atualizada',
+            'ordem' => 2,
+            'descricao' => 'Nova descrição',
+            'pontuacao' => 150,
+            'permite_resposta' => '1',
+        ])->assertRedirect(route('missoes.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('missoes', [
+            'id' => $missao->id,
+            'titulo' => 'Missão atualizada',
+            'permite_resposta' => true,
+        ]);
+    }
+
     public function test_placar_uses_xp_average_and_keeps_350_in_tense_state(): void
     {
         [$turma] = $this->teamWithMembers(1, 350);
@@ -176,13 +358,15 @@ class GamificationTest extends TestCase
         return [$turma, $equipe, $members];
     }
 
-    private function mission(int $order, int $points = 100): Missao
+    private function mission(int $order, int $points = 100, bool $allowsResponse = false, bool $allowsAttachment = false): Missao
     {
         return Missao::create([
             'titulo' => "Missão {$order}",
             'ordem' => $order,
             'descricao' => 'Descrição da missão',
             'pontuacao' => $points,
+            'permite_resposta' => $allowsResponse,
+            'permite_anexo' => $allowsAttachment,
         ]);
     }
 }

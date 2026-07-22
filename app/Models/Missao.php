@@ -18,18 +18,23 @@ class Missao extends Model
         'ordem',
         'descricao',
         'pontuacao',
+        'permite_resposta',
+        'permite_anexo',
     ];
 
     protected $casts = [
         'ordem' => 'integer',
         'pontuacao' => 'integer',
+        'permite_resposta' => 'boolean',
+        'permite_anexo' => 'boolean',
     ];
 
     public function equipes(): BelongsToMany
     {
         return $this->belongsToMany(Equipe::class, 'equipes_missoes')
-                    ->using(EquipeMissao::class)
-                    ->withTimestamps();
+            ->using(EquipeMissao::class)
+            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original'])
+            ->withTimestamps();
     }
 
     public function progresso(): HasMany

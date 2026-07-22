@@ -29,12 +29,16 @@ Route::middleware([
     Route::resource('equipes', EquipeController::class);
     Route::resource('turmas', TurmaController::class);
     Route::resource('categorias', CategoriaController::class);
-    Route::resource('missoes', MissaoController::class);
+    Route::resource('missoes', MissaoController::class)
+        ->parameters(['missoes' => 'missao']);
 
     Route::post('missoes/{missao}/atribuir', [MissaoController::class, 'atribuir'])->name('missoes.atribuir');
     Route::post('missoes/{missao}/remover-equipe', [MissaoController::class, 'removerEquipe'])->name('missoes.removerEquipe');
     Route::post('missoes/iniciar', [MissaoController::class, 'iniciar'])->name('missoes.iniciar');
     Route::post('missoes/finalizar', [MissaoController::class, 'finalizar'])->name('missoes.finalizar');
+    Route::post('missoes/comunicar-falta', [MissaoController::class, 'comunicarFalta'])->name('missoes.comunicarFalta');
+    Route::post('missoes/entregar', [MissaoController::class, 'entregar'])->name('missoes.entregar');
+    Route::get('missoes/entregas/{entrega}/anexo', [MissaoController::class, 'baixarAnexo'])->name('missoes.anexo');
     Route::post('missoes/pontuar', [MissaoController::class, 'pontuar'])->name('missoes.pontuar');
 
     Route::post('equipes/{equipe}/add-points', [EquipeController::class, 'addPoints'])->name('equipes.addPoints');

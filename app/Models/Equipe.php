@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Equipe extends Model
 {
@@ -31,10 +31,12 @@ class Equipe extends Model
     {
         return $this->hasMany(User::class, 'equipe_id');
     }
+
     public function missoes(): BelongsToMany
     {
         return $this->belongsToMany(Missao::class, 'equipes_missoes')
             ->using(EquipeMissao::class)
+            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original'])
             ->withTimestamps();
     }
 
