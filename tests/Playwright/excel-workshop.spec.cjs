@@ -31,6 +31,8 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await page.getByRole('link', { name: 'Equipes' }).first().click();
     await expect(page.getByRole('heading', { name: 'Equipes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sorteio' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Adicionar aluno' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remover aluno' }).first()).toBeVisible();
   });
 
   test('Turmas e Categorias', async ({ page }) => {
@@ -119,5 +121,9 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await expect(page.getByText('Auditor de Qualidade', { exact: true })).toBeVisible();
     await expect(page.getByText('Designer Visual', { exact: true })).toBeVisible();
     await expect(page.getByText('Gestor de Entregas', { exact: true })).toBeVisible();
+    await expect(page.getByText('Regra de ouro: ensinar sem executar pelo colega')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Bônus de Colaboração (+20)' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Badge Salva-Vidas (+15 XP)' })).toBeVisible();
+    await expect(page.getByText('100 + 20 + 15 = 135 pontos')).toBeVisible();
   });
 });

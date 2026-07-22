@@ -430,8 +430,13 @@
 
                         @can('manageAlunos', $equipe)
                             <button onclick="document.getElementById('addAlunoModal{{ $equipe->id }}').classList.remove('hidden')" class="text-xs text-excel-dark hover:text-excel-light transition font-medium">
-                                + Aluno
+                                Adicionar aluno
                             </button>
+                            @if ($equipe->alunos->isNotEmpty())
+                                <button onclick="document.getElementById('removeAlunoModal{{ $equipe->id }}').classList.remove('hidden')" class="text-xs text-red-500 hover:text-red-600 transition font-medium">
+                                    Remover aluno
+                                </button>
+                            @endif
                         @endcan
 
                         @can('delete', $equipe)
@@ -559,9 +564,6 @@
                         </form>
                     </div>
                 </div>
-                <button onclick="document.getElementById('removeAlunoModal{{ $equipe->id }}').classList.remove('hidden')" class="text-xs text-red-500 hover:text-red-600 transition font-medium">
-                    - Aluno
-                </button>
                 @endif
             @endcan
         @endforeach

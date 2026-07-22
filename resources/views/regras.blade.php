@@ -121,6 +121,12 @@
                         <p class="text-xs text-[--text-muted] mt-1 leading-relaxed">Gerencia o tempo, organiza a consolidação das abas individuais no Arquivo Mestre e realiza a entrega oficial para o professor.</p>
                     </div>
                 </div>
+                <div class="mt-5 p-4 rounded-excel bg-blue-50 border border-blue-200">
+                    <h4 class="font-bold text-sm text-blue-800 flex items-center gap-2"><span>💬</span> O papel de consultor durante uma ajuda</h4>
+                    <p class="text-xs text-blue-700 mt-1.5 leading-relaxed">
+                        Quando uma equipe termina cedo e recebe autorização para colaborar, um integrante pode atuar como consultor em outra bancada. Ele deve <strong>observar, fazer perguntas, apontar a causa do problema e explicar o caminho</strong>, deixando que a equipe ajudada execute cada passo. O Auditor de Qualidade, por exemplo, pode explicar por que uma célula gera <code class="font-mono">#VALOR!</code>, mas não pode corrigir a planilha no lugar dos colegas.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -129,7 +135,7 @@
             <h3 class="font-bold text-[--text-main] text-base mb-3 flex items-center gap-2">
                 <span>📋</span> Estrutura das Missões (O Que Esperar de Cada Tarefa)
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div class="bg-white p-4 rounded-excel border border-slate-200">
                     <span class="text-xs font-bold font-mono uppercase text-blue-600 block mb-1">1. O Chamado do Juvenildo</span>
                     <strong class="text-slate-800 text-xs block mb-1.5">Missão Principal (100 pts)</strong>
@@ -228,6 +234,12 @@
                         <p class="text-sm text-green-800 mt-0.5"><em>Honra ao Mérito em Colaboração, Superação e Prática de Excel</em></p>
                     </div>
                 </div>
+                <div class="mt-4 p-4 rounded-excel bg-green-50 border border-green-200">
+                    <h4 class="font-bold text-sm text-green-800">Como o Bônus de Colaboração entra na missão</h4>
+                    <p class="text-xs text-green-700 mt-1.5 leading-relaxed">
+                        Depois de confirmar que a orientação respeitou as regras, o professor acrescenta <strong>+20 pontos ao saldo da missão de cada equipe envolvida</strong>: quem ajudou e quem aceitou a ajuda. Cada auxílio distinto deve ser observado e aprovado pelo professor; assim, colaborações com equipes diferentes podem ser reconhecidas separadamente na mesma rodada.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -267,8 +279,13 @@
                     <div class="p-3 rounded-excel border border-dashed border-gray-300 bg-gray-50/50 text-center opacity-60">
                         <span class="text-3xl block my-1">🛟</span>
                         <strong class="text-xs font-bold text-slate-700 block">Salva-Vidas</strong>
-                        <span class="text-[11px] text-slate-500 block mt-0.5">Ajudou outra consultoria sem pegar no mouse.</span>
+                        <span class="text-[11px] text-slate-500 block mt-0.5">+15 XP somente para quem orientou sem tocar no mouse ou teclado.</span>
                     </div>
+                </div>
+                <div class="mt-5 p-4 rounded-excel bg-amber-50 border border-amber-200">
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        <strong>Importante:</strong> a Badge Salva-Vidas não substitui o Bônus de Colaboração. O bônus pertence à missão e beneficia as duas equipes; a badge é uma conquista de comportamento, vale <strong>+15 XP</strong> e é desbloqueada apenas para a equipe que enviou o consultor. Mesmo que ela ajude mais de uma bancada, a badge permanece uma única conquista na vitrine.
+                    </p>
                 </div>
             </div>
         </div>
@@ -300,7 +317,7 @@
                             <h4 class="font-bold text-sm text-[--text-main]">Bônus de Colaboração</h4>
                         </div>
                         <p class="text-xs text-[--text-muted] leading-relaxed">
-                            Terminou a missão cedo? Envie um colega para <strong class="text-excel-dark">ajudar outra equipe</strong> (só orientar, sem mexer no mouse). Ambas as equipes ganham <strong class="text-excel-dark">+20 pontos</strong> extras!
+                            Terminou a missão cedo? Com autorização do professor, envie um colega para <strong class="text-excel-dark">orientar outra equipe</strong>. Quando a ajuda é validada, cada equipe recebe <strong class="text-excel-dark">+20 pontos</strong> na missão.
                         </p>
                     </div>
 
@@ -312,6 +329,46 @@
                         </div>
                         <p class="text-xs text-[--text-muted] leading-relaxed">
                             No início de algumas aulas, um exercício rápido de 10 minutos. Equipes com menor pontuação que acertarem ganham <strong class="text-excel-dark">+15 pontos</strong> para subir de categoria!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="border-t border-[--border-light] pt-5 space-y-4">
+                    <div>
+                        <h4 class="font-bold text-sm text-[--text-main] flex items-center gap-2"><span>🖐️</span> Regra de ouro: ensinar sem executar pelo colega</h4>
+                        <p class="text-xs text-[--text-muted] mt-1.5 leading-relaxed">
+                            O consultor pode explicar, indicar uma célula e sugerir um comando, mas <strong class="text-excel-dark">não pode tocar no mouse nem no teclado da equipe ajudada</strong>. Se fizer a tarefa por ela, nenhuma das equipes recebe o Bônus de Colaboração e a equipe que ajudou não desbloqueia a Badge Salva-Vidas. A equipe atendida deve desfazer a ação, quando necessário, e repetir o procedimento com as próprias mãos.
+                        </p>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-excel border border-[--border-light]">
+                        <table class="w-full text-xs">
+                            <thead class="bg-[#f8faf8] text-[--text-muted] uppercase tracking-wider">
+                                <tr>
+                                    <th class="text-left px-4 py-3">Reconhecimento</th>
+                                    <th class="text-left px-4 py-3">Quem recebe</th>
+                                    <th class="text-left px-4 py-3">Quando aplicar</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[--border-light] text-[--text-main]">
+                                <tr>
+                                    <td class="px-4 py-3 font-semibold">Bônus de Colaboração (+20)</td>
+                                    <td class="px-4 py-3">A equipe que ajudou e a equipe ajudada</td>
+                                    <td class="px-4 py-3">Em cada auxílio distinto, autorizado e validado na missão</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-3 font-semibold">Badge Salva-Vidas (+15 XP)</td>
+                                    <td class="px-4 py-3">Somente a equipe que prestou a orientação</td>
+                                    <td class="px-4 py-3">Ao ensinar corretamente, sem assumir mouse ou teclado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-4 rounded-excel bg-emerald-50 border border-emerald-200">
+                        <h4 class="font-bold text-sm text-emerald-800">Exemplo de pontuação</h4>
+                        <p class="text-xs text-emerald-700 mt-1.5 leading-relaxed">
+                            Em uma missão de 100 pontos, a equipe que termina cedo e orienta corretamente outra bancada pode receber <strong>100 + 20 + 15 = 135 pontos</strong>: missão, colaboração e Salva-Vidas. A equipe ajudada, depois de corrigir e entregar a própria planilha, pode receber <strong>100 + 20 = 120 pontos</strong>. Isso torna pedir ajuda seguro e recompensa quem compartilha conhecimento sem retirar a autonomia dos colegas.
                         </p>
                     </div>
                 </div>
