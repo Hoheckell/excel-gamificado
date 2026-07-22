@@ -54,7 +54,7 @@
                                 <span class="text-[10px] text-[--text-muted] uppercase tracking-wider">Equipes</span>
                             </div>
                             <div class="text-center p-3 rounded-excel bg-[#f8faf8]">
-                                <span class="text-lg font-bold text-excel-dark block">{{ $turma->users_count ?? 0 }}</span>
+                                <span class="text-lg font-bold text-excel-dark block">{{ $turma->professores_count ?? 0 }}</span>
                                 <span class="text-[10px] text-[--text-muted] uppercase tracking-wider">Prof.</span>
                             </div>
                         </div>

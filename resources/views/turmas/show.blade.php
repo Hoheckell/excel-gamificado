@@ -65,7 +65,7 @@
                     @foreach ($turma->users as $user)
                         <div class="flex items-center gap-2 p-2 rounded-excel bg-[#f8faf8]">
                             <div class="w-7 h-7 rounded-full bg-excel-tint text-excel-dark flex items-center justify-center font-bold text-[10px]">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
+                                {{ Str::substr($user->name, 0, 2) }}
                             </div>
                             <span class="text-xs font-medium">{{ $user->name }}</span>
                             <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $user->tipo === 'professor' ? 'bg-excel-dark text-white' : 'bg-gray-200 text-gray-600' }}">

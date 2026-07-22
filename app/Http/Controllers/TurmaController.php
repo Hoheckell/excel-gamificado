@@ -18,7 +18,7 @@ class TurmaController extends Controller
     public function index(Request $request): View
     {
         $query = Turma::query()
-            ->withCount(['alunos', 'equipes'])
+            ->withCount(['alunos', 'equipes', 'professores'])
             ->with(['users' => function ($q) {
                 $q->where('users.tipo', 'professor')->select('users.id', 'users.name');
             }]);
@@ -63,8 +63,8 @@ class TurmaController extends Controller
 
     public function show(Turma $turma): View
     {
-        $turma->loadCount(['alunos', 'equipes']);
-        $turma->load(['equipes:id,nome,turma_id', 'users:id,name']);
+        $turma->loadCount(['alunos', 'equipes','professores']);
+        $turma->load(['equipes:id,nome,turma_id', 'users:id,name,tipo']);
 
         return view('turmas.show', compact('turma'));
     }
