@@ -14,12 +14,16 @@
 /.zed
 /auth.json
 /node_modules
+/blob-report
+/coverage
+/playwright-report
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
+/test-results
 /vendor
 /database/database.sqlite
 _ide_helper.php

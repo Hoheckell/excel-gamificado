@@ -79,6 +79,39 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     }
   });
 
+  test('Professor gerencia o catálogo de badges', async ({ page }) => {
+    const suffix = Date.now();
+    const nomeInicial = `Badge E2E ${suffix}`;
+    const nomeEditado = `Badge E2E Editada ${suffix}`;
+
+    await page.getByRole('link', { name: 'Badges', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Badges', exact: true })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Nova Badge' }).click();
+    await page.getByLabel('Nome da Badge').fill(nomeInicial);
+    await page.getByLabel('Ícone').fill('🎯');
+    await page.getByLabel('Descrição').fill('Criada pelo teste de interface.');
+    await page.getByLabel('Pontos de bônus').fill('18');
+    await page.getByRole('button', { name: 'Criar Badge' }).click();
+
+    await expect(page).toHaveURL(/\/badges$/);
+    await expect(page.getByText(nomeInicial, { exact: true })).toBeVisible();
+
+    let card = page.getByText(nomeInicial, { exact: true }).locator('..').locator('..');
+    await card.getByRole('link', { name: 'Editar' }).click();
+    await page.getByLabel('Nome da Badge').fill(nomeEditado);
+    await page.getByLabel('Pontos de bônus').fill('25');
+    await page.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(page.getByText(nomeEditado, { exact: true })).toBeVisible();
+    await expect(page.getByText('+25 XP', { exact: true })).toBeVisible();
+
+    card = page.getByText(nomeEditado, { exact: true }).locator('..').locator('..');
+    page.once('dialog', dialog => dialog.accept());
+    await card.getByRole('button', { name: 'Excluir' }).click();
+    await expect(page.getByText(nomeEditado, { exact: true })).toHaveCount(0);
+  });
+
   test('Regras documentam economia de XP e rodízio de papéis', async ({ page }) => {
     await page.getByRole('link', { name: 'Regras' }).click();
     await expect(page.getByText('Meta Máxima: 500 Pontos')).toBeVisible();

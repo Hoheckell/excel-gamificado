@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Badge;
 use App\Models\Categoria;
 use App\Models\Turma;
 use App\Models\User;
@@ -21,14 +20,7 @@ class DatabaseSeeder extends Seeder
             Categoria::updateOrCreate(['nome' => $categoria['nome']], $categoria);
         }
 
-        foreach ([
-            ['nome' => 'Zero Mouse', 'icone' => '⌨️', 'descricao' => 'Dominou os atalhos de teclado.', 'pontos_bonus' => 15],
-            ['nome' => 'Código Limpo', 'icone' => '🧹', 'descricao' => 'Criou fórmulas claras e sem erros.', 'pontos_bonus' => 15],
-            ['nome' => 'Visual Executivo', 'icone' => '🎨', 'descricao' => 'Entregou uma planilha com acabamento profissional.', 'pontos_bonus' => 15],
-            ['nome' => 'Salva-Vidas', 'icone' => '🤝', 'descricao' => 'Ajudou outra equipe sem assumir o computador.', 'pontos_bonus' => 15],
-        ] as $badge) {
-            Badge::updateOrCreate(['nome' => $badge['nome']], $badge);
-        }
+        $this->call(BadgeSeeder::class);
 
         $professor = User::factory()->create([
             'name' => 'Professor',

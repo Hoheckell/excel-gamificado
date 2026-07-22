@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AlunoController;
+use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\EquipeController;
@@ -29,6 +30,7 @@ Route::middleware([
     Route::resource('equipes', EquipeController::class);
     Route::resource('turmas', TurmaController::class);
     Route::resource('categorias', CategoriaController::class);
+    Route::resource('badges', BadgeController::class)->except(['show']);
     Route::resource('missoes', MissaoController::class)
         ->parameters(['missoes' => 'missao']);
 

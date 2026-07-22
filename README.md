@@ -33,6 +33,12 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Categoria atual baseada na pontuação (Ouro, Prata, Bronze, Crescimento)
 - Detalhamento de membros e missões com notas
 
+### Badges
+- Catálogo de conquistas com ícone, descrição e bônus de XP
+- CRUD do catálogo protegido para professores
+- Concessão e remoção de badges por equipe
+- Seeder idempotente que mantém badges adicionais existentes
+
 ### Certificados
 - Modelo visual com proteção contra impressão/captura de tela
 - Emissão com preview ao vivo (Alpine.js)
@@ -54,7 +60,7 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 | Autenticação | Laravel Jetstream (Livewire) + Fortify + Sanctum |
 | Banco | SQLite (dev) |
 | PDF | DomPDF 3.x |
-| Testes | Playwright (5 suites E2E) |
+| Testes | PHPUnit + Playwright |
 
 ## Instalação
 
@@ -75,20 +81,24 @@ npm run build
 php artisan serve --port=8989
 ```
 
-### Dados de teste
+### Seeders
 
-| Tipo | E-mail | Senha |
-|------|--------|-------|
-| Professor | teste@gmail.com | password |
-| Alunos | 20 alunos gerados pelo seeder | password |
+O comando de instalação popula dados demonstrativos para desenvolvimento. O README não documenta registros, credenciais ou outros valores armazenados no banco. Consulte os seeders locais e defina credenciais adequadas ao ambiente antes de disponibilizar a aplicação.
+
+Para atualizar somente o catálogo padrão de badges, sem excluir badges adicionais existentes:
+
+```bash
+php artisan db:seed --class=BadgeSeeder
+```
 
 ## Testes
 
 ```bash
-npx playwright test --reporter=line
+php artisan test
+npm run test:e2e
 ```
 
-5 suites cobrindo: Welcome, Login, Dashboard, Alunos, Equipes, Turmas, Categorias, Regras e Certificados.
+Os testes cobrem autenticação, regras de autorização, turmas, equipes, missões, categorias, badges, placar, regras e certificados.
 
 ## Design System
 

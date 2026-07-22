@@ -27,6 +27,9 @@
                     <x-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
                         {{ __('Categorias') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
+                        {{ __('Badges') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('missoes.index') }}" :active="request()->routeIs('missoes.*')">
                         {{ __('Missões') }}
                     </x-nav-link>
@@ -156,6 +159,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
                 {{ __('Categorias') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
+                {{ __('Badges') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('missoes.index') }}" :active="request()->routeIs('missoes.*')">
                 {{ __('Missões') }}
