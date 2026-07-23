@@ -6,6 +6,9 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 
 ### Autenticação
 - Login/registro com verificação de e-mail (Jetstream + Fortify)
+- Acesso às rotas internas bloqueado até a confirmação do endereço
+- Alunos cadastrados pelo professor também recebem o link de verificação
+- Reenvio disponível para contas que ainda não confirmaram o e-mail
 - Perfis: **Professor** e **Aluno**
 - Interface totalmente em português
 
@@ -27,11 +30,22 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Alunos iniciam/finalizam missões com **timer H:mm:ss**
 - Professor avalia cada aluno com nota, rubrica de competências, feedback e próximo passo
 - Tempo médio da equipe calculado quando todos concluem
+- Multiclasse automática para 1 a 4 presentes, sempre cobrindo os quatro papéis
+- Equipes com até 3 presentes recebem 5 minutos extras sem alteração de XP
+- Rodízio compara a distribuição anterior e se adapta às mudanças de presença
 
 ### Minha Jornada
 - Painel do aluno com missão atual, papel, andamento, próxima ação e feedback privado
 - Progresso por missões concluídas, sem streaks ou punições por pausa
 - Badges apresentados como evidências de competências e comportamentos
+- Funções acumuladas e compensação de tempo apresentadas de forma transparente
+
+### Contingência de equipes
+- 3 presentes: Arquiteto, Designer e Auditor + Gestor
+- 2 presentes: Núcleo Técnico e Núcleo Executivo
+- 1 presente: Consultor Sênior com os quatro papéis
+- Após a terceira missão, equipes com menos de 3 alunos autorizados geram sugestão de reagrupamento no painel docente
+- O sistema nunca funde equipes automaticamente nem transfere XP
 
 ### Progresso e Placar
 - Alunos acompanham apenas a própria equipe contra os patamares

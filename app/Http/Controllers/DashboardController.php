@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
+use App\Models\Equipe;
 use App\Models\EquipeMissaoUser;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,13 +14,35 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isProfessor() || ! $user->equipe_id) {
-            return view('dashboard', ['jornada' => null]);
+        if ($user->isProfessor()) {
+            $turmasIds = $user->turmas()->pluck('turmas.id');
+            $equipesParaReagrupar = Equipe::query()
+                ->whereIn('turma_id', $turmasIds)
+                ->whereHas('progressos.missao', fn ($query) => $query->where('ordem', '>=', 3))
+                ->whereHas('alunos', fn ($query) => $query->where('autorizado', true), '<', 3)
+                ->with('turma:id,codigo')
+                ->withCount([
+                    'alunos as alunos_ativos_count' => fn ($query) => $query->where('autorizado', true),
+                ])
+                ->orderBy('nome')
+                ->get();
+
+            return view('dashboard', [
+                'jornada' => null,
+                'equipesParaReagrupar' => $equipesParaReagrupar,
+            ]);
+        }
+
+        if (! $user->equipe_id) {
+            return view('dashboard', [
+                'jornada' => null,
+                'equipesParaReagrupar' => collect(),
+            ]);
         }
 
         $equipe = $user->equipe()->with('badges')->firstOrFail();
         $missoes = $equipe->missoes()
-            ->with(['progresso' => fn ($query) => $query->where('user_id', $user->id)])
+            ->with(['progresso' => fn ($query) => $query->where('user_id', $user->id)->with('papeis')])
             ->orderBy('ordem')
             ->get();
 
@@ -38,7 +61,7 @@ class DashboardController extends Controller
                 $query->whereNotNull('feedback_professor')
                     ->orWhereNotNull('pontuacao_obtida');
             })
-            ->with('missao')
+            ->with(['missao', 'papeis'])
             ->latest('updated_at')
             ->first();
         $concluidas = $progressoPorMissao->filter(fn ($progresso) => $progresso?->status === 'concluida')->count();
@@ -65,6 +88,7 @@ class DashboardController extends Controller
                 'concluidas' => $concluidas,
                 'proximaAcao' => $proximaAcao,
             ],
+            'equipesParaReagrupar' => collect(),
         ]);
     }
 }

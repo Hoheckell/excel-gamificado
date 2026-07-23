@@ -19,7 +19,7 @@ class EquipeController extends Controller
             'turma:id,codigo,descricao',
             'alunos:id,name,equipe_id',
             'missoes:id,titulo,descricao,pontuacao,permite_resposta,permite_anexo',
-            'missoes.progresso',
+            'missoes.progresso.papeis',
         ]);
 
         if ($request->filled('turma_id')) {

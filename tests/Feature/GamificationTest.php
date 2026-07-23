@@ -29,7 +29,6 @@ class GamificationTest extends TestCase
                 'equipe_id' => $equipe->id,
                 'missao_id' => $missao->id,
                 'user_id' => $member->id,
-                'papel' => $index === 0 ? 'arquiteto' : 'auditor',
                 'status' => 'concluida',
                 'pontuacao_obtida' => $index === 0 ? 80 : 90,
             ]);
@@ -79,70 +78,78 @@ class GamificationTest extends TestCase
     {
         [$turma, $equipe, $members] = $this->teamWithMembers(2);
         $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
 
         $this->actingAs($members[0])->post(route('missoes.iniciar'), [
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
-            'papeis' => [
-                $members[0]->id => 'arquiteto',
-                $members[1]->id => 'auditor',
+            'perfis' => [
+                $members[0]->id => 'tecnico',
+                $members[1]->id => 'executivo',
             ],
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('equipe_missao_user', [
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
             'status' => 'em_andamento',
         ]);
-        $this->assertDatabaseHas('equipe_missao_user', [
+        $progressoTecnico = EquipeMissaoUser::where('missao_id', $missao->id)
+            ->where('user_id', $members[0]->id)->firstOrFail();
+        $progressoExecutivo = EquipeMissaoUser::where('missao_id', $missao->id)
+            ->where('user_id', $members[1]->id)->firstOrFail();
+        $this->assertEqualsCanonicalizing(['arquiteto', 'auditor'], $progressoTecnico->papeis->pluck('papel')->all());
+        $this->assertEqualsCanonicalizing(['designer', 'gestor'], $progressoExecutivo->papeis->pluck('papel')->all());
+        $this->assertDatabaseHas('equipes_missoes', [
+            'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
-            'user_id' => $members[1]->id,
-            'papel' => 'auditor',
-            'status' => 'em_andamento',
+            'tempo_extra_minutos' => 5,
         ]);
     }
 
-    public function test_starting_requires_a_role_for_every_active_member(): void
+    public function test_starting_requires_a_profile_for_every_present_member(): void
     {
         [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
 
         $this->actingAs($members[0])->from(route('equipes.index'))->post(route('missoes.iniciar'), [
             'equipe_id' => $equipe->id,
-            'missao_id' => $this->mission(1)->id,
-            'papeis' => [$members[0]->id => 'arquiteto'],
-        ])->assertRedirect(route('equipes.index'))->assertSessionHasErrors('papeis');
+            'missao_id' => $missao->id,
+            'perfis' => [$members[0]->id => 'tecnico'],
+        ])->assertRedirect(route('equipes.index'))->assertSessionHasErrors('perfis');
 
         $this->assertDatabaseCount('equipe_missao_user', 0);
     }
 
-    public function test_member_cannot_repeat_role_from_immediately_previous_mission(): void
+    public function test_team_cannot_repeat_the_same_multiclass_distribution(): void
     {
         [$turma, $equipe, $members] = $this->teamWithMembers(2);
         $previous = $this->mission(1);
         $current = $this->mission(2);
 
-        EquipeMissaoUser::create([
+        $equipe->missoes()->attach([$previous->id, $current->id]);
+        $progressoTecnico = EquipeMissaoUser::create([
             'equipe_id' => $equipe->id,
             'missao_id' => $previous->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
         ]);
-        EquipeMissaoUser::create([
+        $progressoTecnico->papeis()->createMany([['papel' => 'arquiteto'], ['papel' => 'auditor']]);
+        $progressoExecutivo = EquipeMissaoUser::create([
             'equipe_id' => $equipe->id,
             'missao_id' => $previous->id,
             'user_id' => $members[1]->id,
-            'papel' => 'auditor',
         ]);
+        $progressoExecutivo->papeis()->createMany([['papel' => 'designer'], ['papel' => 'gestor']]);
 
         $this->actingAs($members[0])->from(route('equipes.index'))->post(route('missoes.iniciar'), [
             'equipe_id' => $equipe->id,
             'missao_id' => $current->id,
-            'papeis' => [
-                $members[0]->id => 'arquiteto',
-                $members[1]->id => 'designer',
+            'perfis' => [
+                $members[0]->id => 'tecnico',
+                $members[1]->id => 'executivo',
             ],
-        ])->assertRedirect(route('equipes.index'))->assertSessionHasErrors('papeis');
+        ])->assertRedirect(route('equipes.index'))->assertSessionHasErrors('perfis');
 
         $this->assertDatabaseMissing('equipe_missao_user', ['missao_id' => $current->id]);
     }
@@ -157,7 +164,6 @@ class GamificationTest extends TestCase
                 'equipe_id' => $equipe->id,
                 'missao_id' => $missao->id,
                 'user_id' => $member->id,
-                'papel' => $index ? 'auditor' : 'arquiteto',
                 'status' => $index ? 'em_andamento' : 'concluida',
             ]);
         }
@@ -186,7 +192,6 @@ class GamificationTest extends TestCase
                 'equipe_id' => $equipe->id,
                 'missao_id' => $missao->id,
                 'user_id' => $member->id,
-                'papel' => $index ? 'auditor' : 'arquiteto',
                 'status' => 'concluida',
             ]);
         }
@@ -219,9 +224,9 @@ class GamificationTest extends TestCase
         $this->actingAs($members[0])->post(route('missoes.iniciar'), [
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
-            'papeis' => [
-                $members[0]->id => 'arquiteto',
-                $members[1]->id => 'auditor',
+            'perfis' => [
+                $members[0]->id => 'tecnico',
+                $members[1]->id => 'executivo',
             ],
         ])->assertSessionHasNoErrors();
 
@@ -241,7 +246,6 @@ class GamificationTest extends TestCase
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
             'status' => 'concluida',
         ]);
 
@@ -284,14 +288,12 @@ class GamificationTest extends TestCase
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
             'status' => 'em_andamento',
         ]);
         EquipeMissaoUser::create([
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[1]->id,
-            'papel' => 'auditor',
             'status' => 'em_andamento',
         ]);
 
@@ -349,7 +351,6 @@ class GamificationTest extends TestCase
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
             'status' => 'concluida',
         ]);
 
@@ -437,7 +438,6 @@ class GamificationTest extends TestCase
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'arquiteto',
             'status' => 'concluida',
             'pontuacao_obtida' => 80,
             'competencia_formulas' => 'em_desenvolvimento',
@@ -480,18 +480,158 @@ class GamificationTest extends TestCase
             ->assertSee('Combine os papéis com sua equipe e inicie a missão.')
             ->assertSee('A definir com a equipe');
 
-        EquipeMissaoUser::create([
+        $progresso = EquipeMissaoUser::create([
             'equipe_id' => $equipe->id,
             'missao_id' => $missao->id,
             'user_id' => $members[0]->id,
-            'papel' => 'auditor',
             'status' => 'em_andamento',
         ]);
+        $progresso->papeis()->create(['papel' => 'auditor']);
 
         $this->actingAs($members[0])->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Pratique sua função e finalize sua participação quando terminar.')
             ->assertSee('Auditor de Qualidade');
+    }
+
+    public function test_multiclass_profiles_cover_all_roles_for_one_three_and_four_present_members(): void
+    {
+        foreach ([
+            1 => ['senior'],
+            3 => ['arquiteto', 'designer', 'controle'],
+            4 => ['arquiteto', 'designer', 'auditor', 'gestor'],
+        ] as $count => $profiles) {
+            [$turma, $equipe, $members] = $this->teamWithMembers($count);
+            $missao = $this->mission($count);
+            $equipe->missoes()->attach($missao);
+
+            $this->actingAs($members[0])->post(route('missoes.iniciar'), [
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'perfis' => $members->values()->mapWithKeys(
+                    fn ($member, $index) => [$member->id => $profiles[$index]]
+                )->all(),
+            ])->assertSessionHasNoErrors();
+
+            $roles = EquipeMissaoUser::where('equipe_id', $equipe->id)
+                ->where('missao_id', $missao->id)
+                ->with('papeis')
+                ->get()
+                ->flatMap->papeis
+                ->pluck('papel');
+            $this->assertEqualsCanonicalizing(
+                ['arquiteto', 'auditor', 'designer', 'gestor'],
+                $roles->all()
+            );
+            $this->assertDatabaseHas('equipes_missoes', [
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'tempo_extra_minutos' => $count <= 3 ? 5 : 0,
+            ]);
+        }
+    }
+
+    public function test_changed_attendance_requires_a_new_primary_role_when_an_alternative_exists(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(3);
+        $previous = $this->mission(1);
+        $current = $this->mission(2);
+        $equipe->missoes()->attach([$previous->id, $current->id]);
+
+        foreach ([
+            [$members[0], ['arquiteto']],
+            [$members[1], ['designer']],
+            [$members[2], ['auditor', 'gestor']],
+        ] as [$member, $roles]) {
+            $progress = EquipeMissaoUser::create([
+                'equipe_id' => $equipe->id,
+                'missao_id' => $previous->id,
+                'user_id' => $member->id,
+                'status' => 'concluida',
+            ]);
+            $progress->papeis()->createMany(collect($roles)->map(fn ($role) => ['papel' => $role])->all());
+        }
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $current->id,
+            'user_id' => $members[2]->id,
+            'status' => 'ausente',
+        ]);
+
+        $this->actingAs($members[0])->from(route('equipes.index'))->post(route('missoes.iniciar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $current->id,
+            'perfis' => [
+                $members[0]->id => 'tecnico',
+                $members[1]->id => 'executivo',
+            ],
+        ])->assertSessionHasErrors('perfis');
+
+        $this->actingAs($members[0])->post(route('missoes.iniciar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $current->id,
+            'perfis' => [
+                $members[0]->id => 'executivo',
+                $members[1]->id => 'tecnico',
+            ],
+        ])->assertSessionHasNoErrors();
+    }
+
+    public function test_solo_consultant_can_repeat_senior_profile_because_no_rotation_is_possible(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $previous = $this->mission(1);
+        $current = $this->mission(2);
+        $equipe->missoes()->attach([$previous->id, $current->id]);
+        $progress = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $previous->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $progress->papeis()->createMany(
+            collect(array_keys(EquipeMissaoUser::PAPEIS))
+                ->map(fn ($role) => ['papel' => $role])
+                ->all()
+        );
+
+        $this->actingAs($members[0])->post(route('missoes.iniciar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $current->id,
+            'perfis' => [$members[0]->id => 'senior'],
+        ])->assertSessionHasNoErrors();
+    }
+
+    public function test_professor_dashboard_suggests_manual_regrouping_only_after_third_mission(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $members->each->update(['autorizado' => true]);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $second = $this->mission(2);
+        $third = $this->mission(3);
+
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $second->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $this->actingAs($professor)->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Sugestão pedagógica de reagrupamento');
+
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $third->id,
+            'user_id' => $members[0]->id,
+            'status' => 'em_andamento',
+        ]);
+        $this->actingAs($professor)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Sugestão pedagógica de reagrupamento')
+            ->assertSee($equipe->nome)
+            ->assertSee('decisão manual do professor');
     }
 
     public function test_student_progress_hides_other_teams_and_public_positions_while_professor_keeps_ranking(): void

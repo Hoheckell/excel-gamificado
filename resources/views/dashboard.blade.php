@@ -12,6 +12,25 @@
 
     <div class="max-w-6xl mx-auto p-6">
         @if (! auth()->user()->isAluno())
+            @if ($equipesParaReagrupar->isNotEmpty())
+                <section class="mb-5 rounded-excel border border-blue-200 bg-blue-50 p-5">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">💡</span>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-blue-900">Sugestão pedagógica de reagrupamento</h3>
+                            <p class="text-xs text-blue-800 mt-1">Após a terceira missão, estas equipes possuem menos de três membros autorizados. A Multiclasse mantém a aula funcionando; qualquer fusão continua sendo uma decisão manual do professor.</p>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                @foreach ($equipesParaReagrupar as $equipeReduzida)
+                                    <span class="inline-flex rounded-full border border-blue-200 bg-white px-3 py-1 text-xs text-blue-900">
+                                        {{ $equipeReduzida->nome }} · {{ $equipeReduzida->alunos_ativos_count }} ativo(s) · {{ $equipeReduzida->turma?->codigo }}
+                                    </span>
+                                @endforeach
+                            </div>
+                            <a href="{{ route('equipes.index') }}" class="inline-flex mt-4 text-xs font-semibold text-blue-900 underline">Abrir gerenciamento manual de equipes</a>
+                        </div>
+                    </div>
+                </section>
+            @endif
             <div class="portal-container">
                 <x-welcome />
             </div>
@@ -35,12 +54,6 @@
                     'em_desenvolvimento' => ['Em desenvolvimento', 'bg-blue-50 text-blue-800 border-blue-200'],
                     'dominado' => ['Dominado', 'bg-green-50 text-green-800 border-green-200'],
                 ];
-                $papeis = [
-                    'arquiteto' => 'Arquiteto de Dados',
-                    'auditor' => 'Auditor de Qualidade',
-                    'designer' => 'Designer Visual',
-                    'gestor' => 'Gestor de Entregas',
-                ];
             @endphp
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -55,7 +68,10 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
                                 <div class="rounded-excel bg-[#f8faf8] border border-[--border-light] p-4">
                                     <span class="text-[10px] uppercase tracking-wider text-[--text-muted]">Seu papel</span>
-                                    <strong class="block text-sm text-[--text-main] mt-1">{{ $papeis[$progressoAtual?->papel] ?? 'A definir com a equipe' }}</strong>
+                                    <strong class="block text-sm text-[--text-main] mt-1">{{ $progressoAtual?->papeis_nomes ? implode(' + ', $progressoAtual->papeis_nomes) : 'A definir com a equipe' }}</strong>
+                                    @if (($missaoAtual?->pivot->tempo_extra_minutos ?? 0) > 0)
+                                        <span class="inline-flex mt-2 text-[10px] font-semibold text-blue-700">+{{ $missaoAtual->pivot->tempo_extra_minutos }} minutos · Contrato Enxuto</span>
+                                    @endif
                                 </div>
                                 <div class="rounded-excel bg-[#f8faf8] border border-[--border-light] p-4">
                                     <span class="text-[10px] uppercase tracking-wider text-[--text-muted]">Estado</span>

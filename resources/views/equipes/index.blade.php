@@ -126,6 +126,28 @@
                                             ->whereIn('user_id', $membrosAtivos);
                                         $ausentes = $progressos->where('status', 'ausente')->pluck('user_id');
                                         $membrosPresentes = $membrosAtivos->diff($ausentes);
+                                        $quantidadePresentes = $membrosPresentes->count();
+                                        $perfisMulticlasse = match ($quantidadePresentes) {
+                                            4 => [
+                                                'arquiteto' => '🛠️ Arquiteto de Dados',
+                                                'designer' => '🎨 Designer Visual',
+                                                'auditor' => '🔍 Auditor de Qualidade',
+                                                'gestor' => '⏱️ Gestor de Entregas',
+                                            ],
+                                            3 => [
+                                                'arquiteto' => '🛠️ Arquiteto de Dados',
+                                                'designer' => '🎨 Designer Visual',
+                                                'controle' => '🔍 Auditor + ⏱️ Gestor',
+                                            ],
+                                            2 => [
+                                                'tecnico' => '🛠️ Arquiteto + 🔍 Auditor (Núcleo Técnico)',
+                                                'executivo' => '🎨 Designer + ⏱️ Gestor (Núcleo Executivo)',
+                                            ],
+                                            1 => [
+                                                'senior' => '👑 Consultor Sênior — os quatro papéis',
+                                            ],
+                                            default => [],
+                                        };
                                         $todosConcluiram = $membrosPresentes->isNotEmpty()
                                             && $progressos->whereIn('user_id', $membrosPresentes)->where('status', 'concluida')->count() === $membrosPresentes->count();
                                         $tempoMedio = null;
@@ -163,16 +185,22 @@
                                                                 @csrf
                                                                 <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
                                                                 <input type="hidden" name="missao_id" value="{{ $missao->id }}">
-                                                                <p class="text-xs text-[--text-muted]">Escolha o papel de cada integrante. Ninguém pode repetir o papel usado na missão anterior.</p>
+                                                                @if ($quantidadePresentes <= 3)
+                                                                    <div class="rounded-excel border border-blue-200 bg-blue-50 p-3">
+                                                                        <strong class="text-xs text-blue-800">{{ $quantidadePresentes === 1 ? 'Auditoria confidencial — Consultor Sênior' : 'Consultoria Boutique de Alta Performance' }}</strong>
+                                                                        <p class="text-[10px] text-blue-700 mt-1">Os quatro pilares continuam cobertos por perfis multiclasse. Esta configuração recebe 5 minutos extras, sem alteração de XP.</p>
+                                                                    </div>
+                                                                @else
+                                                                    <p class="text-xs text-[--text-muted]">Distribua os quatro papéis. Na missão seguinte, altere a combinação da equipe.</p>
+                                                                @endif
                                                                 @foreach($equipe->alunos->whereNotIn('id', $ausentes) as $membro)
                                                                     <label class="block">
                                                                         <span class="text-xs font-semibold text-[--text-main]">{{ $membro->name }}</span>
-                                                                        <select name="papeis[{{ $membro->id }}]" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
+                                                                        <select name="perfis[{{ $membro->id }}]" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm bg-white focus:border-excel-dark focus:ring-excel-light">
                                                                             <option value="">Selecione...</option>
-                                                                            <option value="arquiteto">🛠️ Arquiteto de Dados</option>
-                                                                            <option value="auditor">🔍 Auditor de Qualidade</option>
-                                                                            <option value="designer">🎨 Designer Visual</option>
-                                                                            <option value="gestor">⏱️ Gestor de Entregas</option>
+                                                                            @foreach ($perfisMulticlasse as $codigoPerfil => $nomePerfil)
+                                                                                <option value="{{ $codigoPerfil }}">{{ $nomePerfil }}</option>
+                                                                            @endforeach
                                                                         </select>
                                                                     </label>
                                                                 @endforeach
@@ -205,6 +233,11 @@
                                                     <span class="text-[10px] font-semibold text-red-600">Ausente nesta missão</span>
                                                 @endif
                                             </div>
+                                            @if ($missao->pivot->tempo_extra_minutos > 0)
+                                                <span class="inline-flex text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                                                    +{{ $missao->pivot->tempo_extra_minutos }} min · Contrato Enxuto
+                                                </span>
+                                            @endif
 
                                             @php
                                                 $candidatosFalta = $equipe->alunos

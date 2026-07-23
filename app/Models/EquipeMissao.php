@@ -18,6 +18,11 @@ class EquipeMissao extends Pivot
         'resposta',
         'anexo_path',
         'anexo_nome_original',
+        'tempo_extra_minutos',
+    ];
+
+    protected $casts = [
+        'tempo_extra_minutos' => 'integer',
     ];
 
     public function equipe()

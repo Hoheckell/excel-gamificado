@@ -52,7 +52,7 @@ class PlacarController extends Controller
                         ->with(['progresso' => function ($q) use ($equipe, $user) {
                             $q->where('equipe_id', $equipe->id)
                                 ->when($user->isAluno(), fn ($query) => $query->where('user_id', $user->id))
-                                ->with('user:id,name');
+                                ->with(['user:id,name', 'papeis']);
                             // Como o select padrão é '*', a nova coluna 'papel' já virá inclusa aqui!
                         }])
                         ->get();

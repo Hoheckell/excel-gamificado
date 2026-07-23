@@ -23,7 +23,7 @@ class MissaoController extends Controller
 
     public function index(): View
     {
-        $missoes = Missao::with(['equipes:id,nome', 'equipes.alunos:id,name,equipe_id', 'progresso'])
+        $missoes = Missao::with(['equipes:id,nome', 'equipes.alunos:id,name,equipe_id', 'progresso.papeis'])
             ->withCount('equipes')
             ->orderBy('ordem')
             ->paginate(15);
@@ -130,8 +130,8 @@ class MissaoController extends Controller
         $validated = $request->validate([
             'equipe_id' => 'required|exists:equipes,id',
             'missao_id' => 'required|exists:missoes,id',
-            'papeis' => 'required|array',
-            'papeis.*' => ['required', Rule::in(['arquiteto', 'auditor', 'designer', 'gestor'])],
+            'perfis' => 'required|array',
+            'perfis.*' => 'required|string',
         ]);
 
         $user = $request->user();
@@ -146,52 +146,106 @@ class MissaoController extends Controller
             ->pluck('user_id');
         $membros = $equipe->alunos->whereNotIn('id', $ausentes)
             ->pluck('id')->map(fn ($id) => (string) $id)->sort()->values();
-        $informados = collect(array_keys($validated['papeis']))->map(fn ($id) => (string) $id)->sort()->values();
+        $informados = collect(array_keys($validated['perfis']))->map(fn ($id) => (string) $id)->sort()->values();
 
         if ($membros->isEmpty()) {
-            return back()->withErrors(['papeis' => 'A missão precisa ter pelo menos um membro presente.']);
+            return back()->withErrors(['perfis' => 'A missão precisa ter pelo menos um membro presente.']);
         }
 
         if ($membros->values()->all() !== $informados->values()->all()) {
-            return back()->withErrors(['papeis' => 'Defina um papel para todos os membros ativos da equipe.']);
+            return back()->withErrors(['perfis' => 'Defina um perfil para todos os membros presentes da equipe.']);
         }
 
         $missao = Missao::findOrFail($validated['missao_id']);
+        if (! $equipe->missoes()->whereKey($missao->id)->exists()) {
+            abort(403);
+        }
+
+        $quantidadePresentes = $membros->count();
+        $pacotesDisponiveis = EquipeMissaoUser::PERFIS_MULTICLASSE[$quantidadePresentes] ?? null;
+        if (! $pacotesDisponiveis) {
+            return back()->withErrors([
+                'perfis' => 'A distribuição automática aceita equipes com até quatro integrantes presentes.',
+            ]);
+        }
+
+        $perfisInformados = collect($validated['perfis'])->values()->sort()->values();
+        $perfisObrigatorios = collect(array_keys($pacotesDisponiveis))->sort()->values();
+        if ($perfisInformados->all() !== $perfisObrigatorios->all()) {
+            return back()->withErrors([
+                'perfis' => 'Distribua cada perfil multiclasse exatamente uma vez para cobrir os quatro papéis.',
+            ]);
+        }
+
+        $distribuicaoAtual = collect($validated['perfis'])
+            ->mapWithKeys(fn ($perfil, $userId) => [
+                (int) $userId => collect($pacotesDisponiveis[$perfil])->sort()->values()->all(),
+            ]);
+        $papeisCobertos = $distribuicaoAtual->flatten()->unique()->sort()->values();
+        if ($papeisCobertos->all() !== collect(array_keys(EquipeMissaoUser::PAPEIS))->sort()->values()->all()) {
+            return back()->withErrors(['perfis' => 'Todos os quatro papéis precisam estar cobertos na rodada.']);
+        }
+
         $missaoAnterior = Missao::where('ordem', $missao->ordem - 1)->first();
 
         if ($missaoAnterior) {
-            $papeisAnteriores = EquipeMissaoUser::where('equipe_id', $equipe->id)
+            $progressosAnteriores = EquipeMissaoUser::where('equipe_id', $equipe->id)
                 ->where('missao_id', $missaoAnterior->id)
-                ->pluck('papel', 'user_id');
+                ->where('status', '!=', 'ausente')
+                ->with('papeis')
+                ->get();
+            $distribuicaoAnterior = $progressosAnteriores->mapWithKeys(
+                fn ($progresso) => [$progresso->user_id => $progresso->papeis_codigos]
+            );
 
-            foreach ($validated['papeis'] as $userId => $papel) {
-                if ($papeisAnteriores->get((int) $userId) === $papel) {
+            if ($distribuicaoAnterior->count() === $quantidadePresentes && $quantidadePresentes > 1) {
+                if ($distribuicaoAnterior->sortKeys()->all() === $distribuicaoAtual->sortKeys()->all()) {
                     return back()->withErrors([
-                        'papeis' => 'O rodízio exige que cada integrante use um papel diferente da missão anterior.',
+                        'perfis' => 'O rodízio exige uma distribuição diferente da missão anterior.',
                     ]);
+                }
+            } elseif ($quantidadePresentes > 1) {
+                foreach ($distribuicaoAtual as $userId => $papeis) {
+                    $anteriores = $distribuicaoAnterior->get($userId);
+                    if ($anteriores && $anteriores[0] === $papeis[0]) {
+                        return back()->withErrors([
+                            'perfis' => 'Como a presença mudou, altere a classe principal dos integrantes que continuam na equipe.',
+                        ]);
+                    }
                 }
             }
         }
 
-        DB::transaction(function () use ($validated, $equipe): void {
-            foreach ($validated['papeis'] as $userId => $papel) {
-                EquipeMissaoUser::updateOrCreate(
+        $tempoExtra = $quantidadePresentes <= 3 ? 5 : 0;
+        DB::transaction(function () use ($validated, $equipe, $distribuicaoAtual, $tempoExtra): void {
+            foreach ($distribuicaoAtual as $userId => $papeis) {
+                $progresso = EquipeMissaoUser::updateOrCreate(
                     [
                         'equipe_id' => $equipe->id,
                         'missao_id' => $validated['missao_id'],
                         'user_id' => $userId,
                     ],
                     [
-                        'papel' => $papel,
                         'status' => 'em_andamento',
                         'started_at' => now(),
                         'finished_at' => null,
                     ]
                 );
+                $progresso->papeis()->delete();
+                $progresso->papeis()->createMany(
+                    collect($papeis)->map(fn ($papel) => ['papel' => $papel])->all()
+                );
             }
+
+            EquipeMissao::where('equipe_id', $equipe->id)
+                ->where('missao_id', $validated['missao_id'])
+                ->firstOrFail()
+                ->update(['tempo_extra_minutos' => $tempoExtra]);
         });
 
-        return back()->with('success', 'Missão iniciada!');
+        $mensagemTempo = $tempoExtra ? ' A consultoria recebeu 5 minutos extras pela configuração multiclasse.' : '';
+
+        return back()->with('success', 'Missão iniciada com os quatro papéis cobertos!'.$mensagemTempo);
     }
 
     public function comunicarFalta(Request $request): RedirectResponse

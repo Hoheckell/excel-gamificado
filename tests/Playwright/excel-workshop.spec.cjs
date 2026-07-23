@@ -126,5 +126,9 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await expect(page.getByRole('cell', { name: 'Bônus de Colaboração (+20)' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Badge Salva-Vidas (+15 XP)' })).toBeVisible();
     await expect(page.getByText('100 + 20 + 15 = 135 pontos')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Multiclasse: quando a equipe está reduzida' })).toBeVisible();
+    await expect(page.getByText('Núcleo Técnico e Núcleo Executivo.')).toBeVisible();
+    await expect(page.getByText('Consultor Sênior executa os quatro papéis em sequência.')).toBeVisible();
+    await expect(page.getByText('Contrato Enxuto:', { exact: false })).toBeVisible();
   });
 });

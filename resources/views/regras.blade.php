@@ -310,6 +310,36 @@
             </div>
         </div>
 
+        <div class="portal-container">
+            <div class="excel-ribbon px-6 py-4">
+                <h3 class="text-white font-semibold text-lg">Multiclasse: quando a equipe está reduzida</h3>
+            </div>
+            <div class="p-6 space-y-5">
+                <p class="text-sm text-[--text-muted]">Faltas e turmas pequenas não interrompem a missão. Os presentes acumulam funções complementares e continuam cobrindo Lógica, Auditoria, Design e Entrega.</p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="rounded-excel border border-[--border-light] p-4">
+                        <strong class="text-sm text-[--text-main]">4 presentes</strong>
+                        <p class="text-xs text-[--text-muted] mt-2">Um papel por integrante, com distribuição RPG padrão.</p>
+                    </div>
+                    <div class="rounded-excel border border-blue-200 bg-blue-50 p-4">
+                        <strong class="text-sm text-blue-900">3 presentes</strong>
+                        <p class="text-xs text-blue-800 mt-2">Arquiteto, Designer e Controle de Qualidade & Envio.</p>
+                    </div>
+                    <div class="rounded-excel border border-blue-200 bg-blue-50 p-4">
+                        <strong class="text-sm text-blue-900">2 presentes</strong>
+                        <p class="text-xs text-blue-800 mt-2">Núcleo Técnico e Núcleo Executivo.</p>
+                    </div>
+                    <div class="rounded-excel border border-blue-200 bg-blue-50 p-4">
+                        <strong class="text-sm text-blue-900">1 presente</strong>
+                        <p class="text-xs text-blue-800 mt-2">Consultor Sênior executa os quatro papéis em sequência.</p>
+                    </div>
+                </div>
+                <div class="rounded-excel bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
+                    <strong>Contrato Enxuto:</strong> equipes com até três presentes recebem 5 minutos extras registrados na missão, sem bônus de XP. Se uma equipe continuar com menos de três membros após a terceira missão, o professor recebe apenas uma sugestão de reagrupamento manual.
+                </div>
+            </div>
+        </div>
+
         {{-- 7. Mecânicas Anti-Desmotivação --}}
         <div class="portal-container">
             <div class="excel-ribbon px-6 py-4">

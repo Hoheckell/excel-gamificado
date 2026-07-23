@@ -146,19 +146,9 @@
                                                                     </span>
                                                                     <strong class="text-[--text-main]">{{ $p->user->name ?? '—' }}</strong>
                                                                     
-                                                                    {{-- Tag com o Papel de RPG do Aluno --}}
-                                                                    @if(!empty($p->papel))
-                                                                        @php
-                                                                            $iconePapel = match($p->papel) {
-                                                                                'arquiteto' => '🛠️',
-                                                                                'auditor' => '🔍',
-                                                                                'designer' => '🎨',
-                                                                                'gestor' => '⏱️',
-                                                                                default => '👔'
-                                                                            };
-                                                                        @endphp
-                                                                        <span class="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-600 font-mono text-[9px]" title="Função na rodada">
-                                                                            {{ $iconePapel }} {{ ucfirst($p->papel) }}
+                                                                    @if($p->papeis->isNotEmpty())
+                                                                        <span class="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-600 text-[9px]" title="Funções na rodada">
+                                                                            {{ implode(' + ', $p->papeis_nomes) }}
                                                                         </span>
                                                                     @endif
                                                                 </span>

@@ -4,9 +4,38 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EquipeMissaoUser extends Model
 {
+    public const PAPEIS = [
+        'arquiteto' => 'Arquiteto de Dados',
+        'auditor' => 'Auditor de Qualidade',
+        'designer' => 'Designer Visual',
+        'gestor' => 'Gestor de Entregas',
+    ];
+
+    public const PERFIS_MULTICLASSE = [
+        4 => [
+            'arquiteto' => ['arquiteto'],
+            'designer' => ['designer'],
+            'auditor' => ['auditor'],
+            'gestor' => ['gestor'],
+        ],
+        3 => [
+            'arquiteto' => ['arquiteto'],
+            'designer' => ['designer'],
+            'controle' => ['auditor', 'gestor'],
+        ],
+        2 => [
+            'tecnico' => ['arquiteto', 'auditor'],
+            'executivo' => ['designer', 'gestor'],
+        ],
+        1 => [
+            'senior' => ['arquiteto', 'auditor', 'designer', 'gestor'],
+        ],
+    ];
+
     public const NIVEIS_COMPETENCIA = [
         'precisa_praticar',
         'em_desenvolvimento',
@@ -26,7 +55,7 @@ class EquipeMissaoUser extends Model
 
     protected $fillable = [
         'equipe_id', 'missao_id', 'user_id',
-        'papel', 'status', 'started_at', 'finished_at', 'pontuacao_obtida',
+        'status', 'started_at', 'finished_at', 'pontuacao_obtida',
         'competencia_formulas', 'competencia_qualidade', 'competencia_visual',
         'competencia_colaboracao', 'feedback_professor', 'proximo_passo',
     ];
@@ -50,6 +79,23 @@ class EquipeMissaoUser extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function papeis(): HasMany
+    {
+        return $this->hasMany(EquipeMissaoUserPapel::class, 'equipe_missao_user_id');
+    }
+
+    public function getPapeisCodigosAttribute(): array
+    {
+        return $this->papeis->pluck('papel')->sort()->values()->all();
+    }
+
+    public function getPapeisNomesAttribute(): array
+    {
+        return collect($this->papeis_codigos)
+            ->map(fn ($papel) => self::PAPEIS[$papel] ?? ucfirst($papel))
+            ->all();
     }
 
     public function getDuracaoAttribute(): ?string

@@ -33,7 +33,7 @@ class Missao extends Model
     {
         return $this->belongsToMany(Equipe::class, 'equipes_missoes')
             ->using(EquipeMissao::class)
-            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original'])
+            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original', 'tempo_extra_minutos'])
             ->withTimestamps();
     }
 

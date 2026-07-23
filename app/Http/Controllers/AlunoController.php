@@ -6,12 +6,12 @@ use App\Mail\CertificadoEnviado;
 use App\Models\Equipe;
 use App\Models\Turma;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Auth;
 
 class AlunoController extends Controller
 {
@@ -109,14 +109,16 @@ class AlunoController extends Controller
         ]);
 
         $aluno->turmas()->attach($validated['turma_id']);
+        event(new Registered($aluno));
 
         return redirect()->route('alunos.index')
-            ->with('success', 'Aluno cadastrado com sucesso.');
+            ->with('success', 'Aluno cadastrado. Um link de verificação foi enviado ao e-mail informado.');
     }
 
     public function show(User $aluno): View
     {
         $aluno->load(['equipe:id,nome', 'turmas:id,codigo']);
+
         return view('alunos.show', compact('aluno'));
     }
 
@@ -145,7 +147,7 @@ class AlunoController extends Controller
         ];
 
         if ($request->user()->isProfessor()) {
-            $rules['email'] = 'required|string|email|max:255|unique:users,email,' . $aluno->id;
+            $rules['email'] = 'required|string|email|max:255|unique:users,email,'.$aluno->id;
             $rules['turma_id'] = 'required|exists:turmas,id';
             $rules['equipe_id'] = 'nullable|exists:equipes,id';
         }
@@ -180,11 +182,11 @@ class AlunoController extends Controller
     {
         $this->authorize('update', $aluno);
 
-        if (!auth()->user()->isProfessor()) {
+        if (! auth()->user()->isProfessor()) {
             abort(403);
         }
 
-        $aluno->update(['autorizado' => !$aluno->autorizado]);
+        $aluno->update(['autorizado' => ! $aluno->autorizado]);
 
         $status = $aluno->autorizado ? 'autorizado' : 'desautorizado';
 
@@ -231,7 +233,8 @@ class AlunoController extends Controller
         try {
             Mail::to($aluno->email)->send(new CertificadoEnviado($certificado));
         } catch (\Exception $e) {
-            \Log::error('Falha ao reenviar certificado: ' . $e->getMessage());
+            \Log::error('Falha ao reenviar certificado: '.$e->getMessage());
+
             return back()->with('error', 'Falha ao enviar o e-mail. Tente novamente.');
         }
 
