@@ -339,6 +339,187 @@ class GamificationTest extends TestCase
             ->assertViewHas('humorChefe', fn (array $humor) => $humor['estado'] === 'tenso');
     }
 
+    public function test_professor_can_save_learning_rubric_feedback_and_next_step_without_changing_xp_contract(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1, 10);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'papel' => 'arquiteto',
+            'status' => 'concluida',
+        ]);
+
+        $this->actingAs($professor)->post(route('missoes.pontuar'), [
+            'registro_id' => $registro->id,
+            'pontuacao' => 80,
+            'competencia_formulas' => 'em_desenvolvimento',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+            'feedback_professor' => 'A fórmula funciona e pode ficar mais legível.',
+            'proximo_passo' => 'Pratique referências absolutas na próxima planilha.',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('equipe_missao_user', [
+            'id' => $registro->id,
+            'pontuacao_obtida' => 80,
+            'competencia_formulas' => 'em_desenvolvimento',
+            'feedback_professor' => 'A fórmula funciona e pode ficar mais legível.',
+            'proximo_passo' => 'Pratique referências absolutas na próxima planilha.',
+        ]);
+        $this->assertSame(90, $equipe->fresh()->xp_total);
+    }
+
+    public function test_assessment_requires_valid_levels_and_next_step_when_learning_is_in_progress(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers();
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $this->mission(1)->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $payload = [
+            'registro_id' => $registro->id,
+            'pontuacao' => 70,
+            'competencia_formulas' => 'em_desenvolvimento',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+        ];
+
+        $this->actingAs($professor)->from(route('equipes.index'))
+            ->post(route('missoes.pontuar'), $payload)
+            ->assertRedirect(route('equipes.index'))
+            ->assertSessionHasErrors('proximo_passo');
+
+        $payload['competencia_formulas'] = 'perfeito';
+        $payload['proximo_passo'] = 'Revisar a fórmula.';
+        $this->actingAs($professor)->from(route('equipes.index'))
+            ->post(route('missoes.pontuar'), $payload)
+            ->assertSessionHasErrors('competencia_formulas');
+    }
+
+    public function test_student_cannot_assess_mission_progress(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers();
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $this->mission(1)->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.pontuar'), [
+            'registro_id' => $registro->id,
+            'pontuacao' => 100,
+            'competencia_formulas' => 'dominado',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+        ])->assertForbidden();
+
+        $this->assertNull($registro->fresh()->pontuacao_obtida);
+    }
+
+    public function test_student_dashboard_shows_personal_journey_and_never_another_members_feedback(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'papel' => 'arquiteto',
+            'status' => 'concluida',
+            'pontuacao_obtida' => 80,
+            'competencia_formulas' => 'em_desenvolvimento',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+            'feedback_professor' => 'Feedback pessoal visível.',
+            'proximo_passo' => 'Revisar referências absolutas.',
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[1]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 90,
+            'feedback_professor' => 'Feedback secreto do colega.',
+        ]);
+
+        $this->actingAs($members[0])->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Minha Jornada')
+            ->assertSee('Feedback pessoal visível.')
+            ->assertSee('Revisar referências absolutas.')
+            ->assertDontSee('Feedback secreto do colega.');
+    }
+
+    public function test_student_dashboard_guides_empty_pending_and_in_progress_states(): void
+    {
+        $studentWithoutTeam = User::factory()->create(['equipe_id' => null]);
+        $this->actingAs($studentWithoutTeam)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Sua jornada está quase pronta');
+
+        [$turma, $equipe, $members] = $this->teamWithMembers();
+        $missao = $this->mission(1);
+        $equipe->missoes()->attach($missao);
+
+        $this->actingAs($members[0])->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Combine os papéis com sua equipe e inicie a missão.')
+            ->assertSee('A definir com a equipe');
+
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'papel' => 'auditor',
+            'status' => 'em_andamento',
+        ]);
+
+        $this->actingAs($members[0])->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Pratique sua função e finalize sua participação quando terminar.')
+            ->assertSee('Auditor de Qualidade');
+    }
+
+    public function test_student_progress_hides_other_teams_and_public_positions_while_professor_keeps_ranking(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1, 100);
+        $outraEquipe = Equipe::create([
+            'turma_id' => $turma->id,
+            'nome' => 'Equipe que não deve aparecer',
+            'pontuacao' => 500,
+        ]);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+
+        $this->actingAs($members[0])->get(route('placar.index', ['turma_id' => $turma->id]))
+            ->assertOk()
+            ->assertSee('Progresso da Minha Equipe')
+            ->assertSee($equipe->nome)
+            ->assertDontSee($outraEquipe->nome)
+            ->assertDontSee('🥇');
+
+        $this->actingAs($professor)->get(route('placar.index', ['turma_id' => $turma->id]))
+            ->assertOk()
+            ->assertSee('Placar Geral')
+            ->assertSee($equipe->nome)
+            ->assertSee($outraEquipe->nome)
+            ->assertSee('🥇');
+    }
+
     private function teamWithMembers(int $count = 1, int $basePoints = 0): array
     {
         $turma = Turma::create([

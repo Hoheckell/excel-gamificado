@@ -5,12 +5,12 @@
                 <h2 class="font-semibold text-xl text-white leading-tight">Regras do Sistema & Manual da Consultoria</h2>
                 <p class="text-xs text-white/70 mt-0.5 uppercase tracking-wider">Iguatu Agro&Comércio — Gamificação & RPG de Excel Básico</p>
             </div>
-            {{-- Zequinhômetro / Medidor de Humor do Chefe --}}
+            {{-- Momento coletivo de aprendizagem --}}
             <div class="hidden sm:flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full border border-white/20">
-                <span class="text-2xl" title="Status atual da empresa">😎</span>
+                <span class="text-2xl" title="Momento atual da aprendizagem">🧭</span>
                 <div class="text-right">
-                    <span class="block text-[10px] uppercase font-bold text-white/80 tracking-widest">Humor do Juvenildo</span>
-                    <span class="text-xs font-semibold text-green-300">Satisfeito com as Consultorias</span>
+                    <span class="block text-[10px] uppercase font-bold text-white/80 tracking-widest">Momento de aprendizagem</span>
+                    <span class="text-xs font-semibold text-green-200">Cada equipe avança a partir do próprio progresso</span>
                 </div>
             </div>
         </div>
@@ -60,7 +60,7 @@
                     <h3 class="font-bold text-[--text-main] text-base">Progresso Geral da Conquista (XP)</h3>
                     <span class="text-xs font-mono font-bold bg-green-100 text-green-800 px-3 py-1 rounded-full">Meta Máxima: 500 Pontos</span>
                 </div>
-                <p class="text-xs text-[--text-muted] mb-6">Acumule pontos ao longo das 5 missões diárias para destravar o patamar da sua equipe no certificado de destaque prático.</p>
+                <p class="text-xs text-[--text-muted] mb-6">Os pontos registram resultados já alcançados. O objetivo principal é dominar as competências de Excel e usar o feedback para escolher o próximo passo.</p>
                 
                 {{-- XP Bar --}}
                 <div class="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-6">
@@ -286,6 +286,26 @@
                     <p class="text-xs text-amber-800 leading-relaxed">
                         <strong>Importante:</strong> a Badge Salva-Vidas não substitui o Bônus de Colaboração. O bônus pertence à missão e beneficia as duas equipes; a badge é uma conquista de comportamento, vale <strong>+15 XP</strong> e é desbloqueada apenas para a equipe que enviou o consultor. Mesmo que ela ajude mais de uma bancada, a badge permanece uma única conquista na vitrine.
                     </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="portal-container">
+            <div class="excel-ribbon px-6 py-4">
+                <h3 class="text-white font-semibold text-lg">Como funciona o ciclo de aprendizagem</h3>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-excel bg-[#f8faf8] border border-[--border-light]">
+                    <strong class="text-sm text-[--text-main]">1. Pratique com propósito</strong>
+                    <p class="text-xs text-[--text-muted] mt-2">Entenda a missão, assuma um papel e pratique individualmente enquanto a equipe constrói um único Arquivo Mestre.</p>
+                </div>
+                <div class="p-4 rounded-excel bg-[#f8faf8] border border-[--border-light]">
+                    <strong class="text-sm text-[--text-main]">2. Receba uma devolutiva</strong>
+                    <p class="text-xs text-[--text-muted] mt-2">O professor registra fórmulas, qualidade, comunicação visual e colaboração como competências dominadas ou ainda em desenvolvimento.</p>
+                </div>
+                <div class="p-4 rounded-excel bg-[#f8faf8] border border-[--border-light]">
+                    <strong class="text-sm text-[--text-main]">3. Escolha o próximo passo</strong>
+                    <p class="text-xs text-[--text-muted] mt-2">Use a orientação recebida para revisar uma habilidade e iniciar a próxima missão. Não existem sequências diárias nem punição por pausa ou falta.</p>
                 </div>
             </div>
         </div>

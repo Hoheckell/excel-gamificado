@@ -13,25 +13,32 @@
 
                 <div class="hidden space-x-6 sm:-my-px sm:ms-8 sm:flex">
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                        {{ __('Painel') }}
+                        {{ Auth::user()->isAluno() ? __('Minha Jornada') : __('Painel') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('alunos.index') }}" :active="request()->routeIs('alunos.*')">
-                        {{ __('Alunos') }}
-                    </x-nav-link>
+                    @if (Auth::user()->isProfessor())
+                        <x-nav-link href="{{ route('alunos.index') }}" :active="request()->routeIs('alunos.*')">
+                            {{ __('Alunos') }}
+                        </x-nav-link>
+                    @endif
                     <x-nav-link href="{{ route('equipes.index') }}" :active="request()->routeIs('equipes.*')">
                         {{ __('Equipes') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('turmas.index') }}" :active="request()->routeIs('turmas.*')">
-                        {{ __('Turmas') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
-                        {{ __('Categorias') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
-                        {{ __('Badges') }}
-                    </x-nav-link>
+                    @if (Auth::user()->isProfessor())
+                        <x-nav-link href="{{ route('turmas.index') }}" :active="request()->routeIs('turmas.*')">
+                            {{ __('Turmas') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
+                            {{ __('Categorias') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
+                            {{ __('Badges') }}
+                        </x-nav-link>
+                    @endif
                     <x-nav-link href="{{ route('missoes.index') }}" :active="request()->routeIs('missoes.*')">
                         {{ __('Missões') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('placar.index') }}" :active="request()->routeIs('placar.*')">
+                        {{ Auth::user()->isAluno() ? __('Meu Progresso') : __('Placar') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('regras') }}" :active="request()->routeIs('regras')">
                         {{ __('Regras') }}
@@ -146,25 +153,32 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-white">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                {{ __('Painel') }}
+                {{ Auth::user()->isAluno() ? __('Minha Jornada') : __('Painel') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('alunos.index') }}" :active="request()->routeIs('alunos.*')">
-                {{ __('Alunos') }}
-            </x-responsive-nav-link>
+            @if (Auth::user()->isProfessor())
+                <x-responsive-nav-link href="{{ route('alunos.index') }}" :active="request()->routeIs('alunos.*')">
+                    {{ __('Alunos') }}
+                </x-responsive-nav-link>
+            @endif
             <x-responsive-nav-link href="{{ route('equipes.index') }}" :active="request()->routeIs('equipes.*')">
                 {{ __('Equipes') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('turmas.index') }}" :active="request()->routeIs('turmas.*')">
-                {{ __('Turmas') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
-                {{ __('Categorias') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
-                {{ __('Badges') }}
-            </x-responsive-nav-link>
+            @if (Auth::user()->isProfessor())
+                <x-responsive-nav-link href="{{ route('turmas.index') }}" :active="request()->routeIs('turmas.*')">
+                    {{ __('Turmas') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('categorias.index') }}" :active="request()->routeIs('categorias.*')">
+                    {{ __('Categorias') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('badges.index') }}" :active="request()->routeIs('badges.*')">
+                    {{ __('Badges') }}
+                </x-responsive-nav-link>
+            @endif
             <x-responsive-nav-link href="{{ route('missoes.index') }}" :active="request()->routeIs('missoes.*')">
                 {{ __('Missões') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('placar.index') }}" :active="request()->routeIs('placar.*')">
+                {{ Auth::user()->isAluno() ? __('Meu Progresso') : __('Placar') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('regras') }}" :active="request()->routeIs('regras')">
                 {{ __('Regras') }}

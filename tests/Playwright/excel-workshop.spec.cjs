@@ -70,11 +70,12 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await expect(page.getByLabel('Pontuação')).toHaveValue('100');
   });
 
-  test('Placar exibe XP, Zequinhômetro e vitrine de badges', async ({ page }) => {
+  test('Placar do professor exibe XP, momento pedagógico e evidências', async ({ page }) => {
     await page.goto('/placar');
     await expect(page.getByRole('heading', { name: 'Placar Geral' })).toBeVisible();
-    await expect(page.getByText('Humor do Juvenildo')).toBeVisible();
+    await expect(page.getByText('Momento de aprendizagem')).toBeVisible();
     await expect(page.getByText('pontos / 500').first()).toBeVisible();
+    await expect(page.getByText('Evidências de competências e atitudes').first()).toBeVisible();
 
     for (const badge of ['Zero Mouse', 'Código Limpo', 'Visual Executivo', 'Salva-Vidas']) {
       await expect(page.getByText(badge).first()).toBeVisible();

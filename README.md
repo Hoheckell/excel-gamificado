@@ -25,13 +25,19 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - CRUD de missões com descrição e pontuação (professor)
 - Atribuição de missões a múltiplas equipes
 - Alunos iniciam/finalizam missões com **timer H:mm:ss**
-- Professor pontua cada aluno individualmente
+- Professor avalia cada aluno com nota, rubrica de competências, feedback e próximo passo
 - Tempo médio da equipe calculado quando todos concluem
 
-### Placar Geral
-- Ranking de equipes por pontuação
+### Minha Jornada
+- Painel do aluno com missão atual, papel, andamento, próxima ação e feedback privado
+- Progresso por missões concluídas, sem streaks ou punições por pausa
+- Badges apresentados como evidências de competências e comportamentos
+
+### Progresso e Placar
+- Alunos acompanham apenas a própria equipe contra os patamares
+- Ranking completo de equipes disponível somente para professores
 - Categoria atual baseada na pontuação (Ouro, Prata, Bronze, Crescimento)
-- Detalhamento de membros e missões com notas
+- Detalhamento pedagógico com notas e rubricas conforme a autorização do usuário
 
 ### Badges
 - Catálogo de conquistas com ícone, descrição e bônus de XP

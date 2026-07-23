@@ -4,6 +4,7 @@ use App\Http\Controllers\AlunoController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CertificadoController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EquipeController;
 use App\Http\Controllers\MissaoController;
 use App\Http\Controllers\PlacarController;
@@ -22,9 +23,7 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::resource('alunos', AlunoController::class)->except(['show']);
     Route::resource('equipes', EquipeController::class);

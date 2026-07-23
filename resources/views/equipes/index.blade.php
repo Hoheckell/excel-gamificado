@@ -282,10 +282,9 @@
                                                                 <span class="text-green-700 font-semibold">{{ $p->duracao }}</span>
                                                                 @if ($p->pontuacao_obtida !== null)
                                                                     <span class="text-excel-dark font-bold ml-1">{{ $p->pontuacao_obtida }}pts</span>
-                                                                @else
-                                                                    <button onclick="document.getElementById('pontuarModal{{ $p->id }}').classList.remove('hidden')"
-                                                                        class="text-[10px] text-excel-dark font-bold underline hover:text-excel-light transition">Pontuar</button>
                                                                 @endif
+                                                                <button onclick="document.getElementById('pontuarModal{{ $p->id }}').classList.remove('hidden')"
+                                                                    class="text-[10px] text-excel-dark font-bold underline hover:text-excel-light transition">{{ $p->pontuacao_obtida === null ? 'Avaliar' : 'Revisar avaliação' }}</button>
                                                             @elseif ($p && $p->status === 'em_andamento')
                                                                 <span class="text-orange-500">Em andamento</span>
                                                             @elseif ($p && $p->status === 'ausente')
@@ -296,23 +295,46 @@
                                                         </span>
                                                     </div>
 
-                                                    @if ($p && $p->status === 'concluida' && $p->pontuacao_obtida === null)
+                                                    @if ($p && $p->status === 'concluida')
                                                     <div id="pontuarModal{{ $p->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
-                                                        <div class="bg-white rounded-excel w-full max-w-xs shadow-xl overflow-hidden">
+                                                        <div class="bg-white rounded-excel w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
                                                             <div class="excel-ribbon px-4 py-3">
-                                                                <h3 class="text-white text-sm font-semibold">Pontuar — {{ $aluno->name }}</h3>
+                                                                <h3 class="text-white text-sm font-semibold">Avaliar aprendizagem — {{ $aluno->name }}</h3>
                                                             </div>
                                                             <form method="POST" action="{{ route('missoes.pontuar') }}" class="p-4 space-y-3">
                                                                 @csrf
                                                                 <input type="hidden" name="registro_id" value="{{ $p->id }}">
                                                                 <div>
                                                                     <span class="text-[10px] text-[--text-muted]">Nota (máx: {{ $missao->pontuacao }} pts)</span>
-                                                                    <input type="number" name="pontuacao" value="{{ $missao->pontuacao }}" min="0" max="{{ $missao->pontuacao }}" required
+                                                                    <input type="number" name="pontuacao" value="{{ old('pontuacao', $p->pontuacao_obtida ?? $missao->pontuacao) }}" min="0" max="{{ $missao->pontuacao }}" required
                                                                         class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light">
                                                                 </div>
+                                                                <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                    <legend class="text-xs font-semibold text-[--text-main] mb-2">Rubrica por competência</legend>
+                                                                    @foreach (\App\Models\EquipeMissaoUser::COMPETENCIAS as $campo => $nome)
+                                                                        <label>
+                                                                            <span class="text-[10px] text-[--text-muted]">{{ $nome }}</span>
+                                                                            <select name="{{ $campo }}" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-xs focus:border-excel-dark focus:ring-excel-light">
+                                                                                <option value="">Selecione...</option>
+                                                                                <option value="precisa_praticar" @selected(old($campo, $p->{$campo}) === 'precisa_praticar')>Precisa praticar</option>
+                                                                                <option value="em_desenvolvimento" @selected(old($campo, $p->{$campo}) === 'em_desenvolvimento')>Em desenvolvimento</option>
+                                                                                <option value="dominado" @selected(old($campo, $p->{$campo}) === 'dominado')>Dominado</option>
+                                                                            </select>
+                                                                        </label>
+                                                                    @endforeach
+                                                                </fieldset>
+                                                                <label class="block">
+                                                                    <span class="text-[10px] text-[--text-muted]">Feedback do professor (opcional)</span>
+                                                                    <textarea name="feedback_professor" rows="3" maxlength="2000" class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light">{{ old('feedback_professor', $p->feedback_professor) }}</textarea>
+                                                                </label>
+                                                                <label class="block">
+                                                                    <span class="text-[10px] text-[--text-muted]">Próximo passo recomendado</span>
+                                                                    <textarea name="proximo_passo" rows="2" maxlength="1000" class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light">{{ old('proximo_passo', $p->proximo_passo) }}</textarea>
+                                                                    <span class="text-[10px] text-[--text-muted]">Obrigatório quando alguma competência ainda não estiver dominada.</span>
+                                                                </label>
                                                                 <div class="flex justify-end gap-2">
                                                                     <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-xs text-[--text-muted] hover:text-excel-dark transition">Cancelar</button>
-                                                                    <x-button class="text-xs px-3 py-1.5">Salvar</x-button>
+                                                                    <x-button class="text-xs px-3 py-1.5">Salvar avaliação</x-button>
                                                                 </div>
                                                             </form>
                                                         </div>

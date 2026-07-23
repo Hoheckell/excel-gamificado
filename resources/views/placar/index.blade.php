@@ -2,16 +2,16 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="font-semibold text-xl text-white leading-tight">Placar Geral</h2>
-                <p class="text-xs text-white/70 mt-0.5 uppercase tracking-wider">Iguatu Agro&Comércio — Desempenho das Consultorias</p>
+                <h2 class="font-semibold text-xl text-white leading-tight">{{ auth()->user()->isProfessor() ? 'Placar Geral' : 'Progresso da Minha Equipe' }}</h2>
+                <p class="text-xs text-white/70 mt-0.5 uppercase tracking-wider">{{ auth()->user()->isProfessor() ? 'Visão pedagógica das consultorias' : 'Metas, evidências e evolução da consultoria' }}</p>
             </div>
             {{-- Zequinhômetro / Status Global --}}
             @if(isset($humorChefe))
             <div class="hidden sm:flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full border border-white/20">
                 <span class="text-2xl">{{ $humorChefe['icone'] ?? '😎' }}</span>
                 <div class="text-right">
-                    <span class="block text-[10px] uppercase font-bold text-white/80 tracking-widest">Humor do Juvenildo</span>
-                    <span class="text-xs font-semibold text-green-300">{{ $humorChefe['texto'] ?? 'Satisfeito com as equipes' }}</span>
+                    <span class="block text-[10px] uppercase font-bold text-white/80 tracking-widest">Momento de aprendizagem</span>
+                    <span class="text-xs font-semibold text-green-200">{{ $humorChefe['texto'] ?? 'A turma está avançando' }}</span>
                 </div>
             </div>
             @endif
@@ -46,6 +46,12 @@
                     <p>Nenhuma equipe nesta turma.</p>
                 </div>
             @else
+                @if (auth()->user()->isAluno())
+                    <div class="mb-5 rounded-excel border border-excel-light bg-excel-tint px-5 py-4">
+                        <strong class="text-sm text-excel-dark">Seu progresso é comparado às metas de aprendizagem, não aos colegas.</strong>
+                        <p class="text-xs text-excel-dark/80 mt-1">A classificação completa é uma ferramenta pedagógica reservada ao professor.</p>
+                    </div>
+                @endif
                 <div class="space-y-4">
                     @foreach ($equipes as $posicao => $equipe)
                         @php
@@ -55,16 +61,17 @@
                         @endphp
                         <div class="portal-container">
                             <div class="flex items-stretch">
-                                {{-- Posição (Atualizado com Medalhas) --}}
-                                <div class="flex items-center justify-center w-14 shrink-0 rounded-tl-lg rounded-bl-lg" style="background-color: {{ $corCategoria }};">
-                                    <span class="text-white font-bold text-xl">
-                                        @if ($posicao === 0) 🥇
-                                        @elseif ($posicao === 1) 🥈
-                                        @elseif ($posicao === 2) 🥉
-                                        @else {{ $posicao + 1 }}º
-                                        @endif
-                                    </span>
-                                </div>
+                                @if (auth()->user()->isProfessor())
+                                    <div class="flex items-center justify-center w-14 shrink-0 rounded-tl-lg rounded-bl-lg" style="background-color: {{ $corCategoria }};">
+                                        <span class="text-white font-bold text-xl">
+                                            @if ($posicao === 0) 🥇
+                                            @elseif ($posicao === 1) 🥈
+                                            @elseif ($posicao === 2) 🥉
+                                            @else {{ $posicao + 1 }}º
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endif
 
                                 {{-- Conteúdo --}}
                                 <div class="flex-1 min-w-0">
@@ -92,13 +99,15 @@
                                             <div class="h-full rounded-full transition-all" style="width: {{ $larguraBarra }}%; background-color: {{ $corCategoria }};"></div>
                                         </div>
 
-                                        {{-- Vitrine de conquistas --}}
+                                        {{-- Evidências de aprendizagem --}}
                                         @if($badges->isNotEmpty())
                                             <div class="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                                                <span class="w-full text-[10px] uppercase tracking-wider text-[--text-muted]">Evidências de competências e atitudes</span>
                                                 @foreach($badges as $badge)
                                                     @php $conquistada = $equipe->badges->contains($badge->id); @endphp
                                                     <span class="inline-flex items-center gap-1 text-[10px] border px-2 py-0.5 rounded-full font-semibold {{ $conquistada ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-gray-50 text-gray-400 border-gray-200 opacity-50 grayscale' }}" title="{{ $badge->descricao }}">
-                                                        <span>{{ $badge->icone }}</span> {{ $badge->nome }} <strong class="text-yellow-600 font-mono">+{{ $badge->pontos_bonus }}pts</strong>
+                                                        <span>{{ $badge->icone }}</span> {{ $badge->nome }}
+                                                        @if(auth()->user()->isProfessor())<strong class="text-yellow-600 font-mono">+{{ $badge->pontos_bonus }}pts</strong>@endif
                                                     </span>
                                                     @can('managePoints', $equipe)
                                                         @if($conquistada)
@@ -166,6 +175,21 @@
                                                                     @endif
                                                                 </span>
                                                             </div>
+                                                            @if ($p->tem_feedback)
+                                                                <div class="mt-2 rounded bg-white border border-[--border-light] p-2">
+                                                                    <div class="flex flex-wrap gap-1">
+                                                                        @foreach (\App\Models\EquipeMissaoUser::COMPETENCIAS as $campo => $nome)
+                                                                            @if ($p->{$campo})
+                                                                                <span class="text-[9px] rounded px-1.5 py-0.5 {{ $p->{$campo} === 'dominado' ? 'bg-green-50 text-green-700' : ($p->{$campo} === 'em_desenvolvimento' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700') }}">
+                                                                                    {{ $nome }}: {{ str_replace('_', ' ', $p->{$campo}) }}
+                                                                                </span>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </div>
+                                                                    @if ($p->feedback_professor)<p class="mt-2 text-[10px] text-[--text-main]"><strong>Feedback:</strong> {{ $p->feedback_professor }}</p>@endif
+                                                                    @if ($p->proximo_passo)<p class="mt-1 text-[10px] text-excel-dark"><strong>Próximo passo:</strong> {{ $p->proximo_passo }}</p>@endif
+                                                                </div>
+                                                            @endif
                                                         @endforeach
                                                         @if ($missao->progresso->isEmpty())
                                                             <p class="text-[10px] text-[--text-muted] italic">Nenhum progresso registrado.</p>

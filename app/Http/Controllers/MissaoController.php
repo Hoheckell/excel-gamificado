@@ -338,9 +338,16 @@ class MissaoController extends Controller
 
     public function pontuar(Request $request): RedirectResponse
     {
+        $niveis = EquipeMissaoUser::NIVEIS_COMPETENCIA;
         $validated = $request->validate([
             'registro_id' => 'required|exists:equipe_missao_user,id',
             'pontuacao' => 'required|integer|min:0',
+            'competencia_formulas' => ['required', Rule::in($niveis)],
+            'competencia_qualidade' => ['required', Rule::in($niveis)],
+            'competencia_visual' => ['required', Rule::in($niveis)],
+            'competencia_colaboracao' => ['required', Rule::in($niveis)],
+            'feedback_professor' => 'nullable|string|max:2000',
+            'proximo_passo' => 'nullable|string|max:1000',
         ]);
 
         $registro = EquipeMissaoUser::findOrFail($validated['registro_id']);
@@ -348,8 +355,21 @@ class MissaoController extends Controller
         if ($validated['pontuacao'] > $registro->missao->pontuacao) {
             return back()->withErrors(['pontuacao' => 'A pontuação não pode superar o valor da missão.']);
         }
-        $registro->update(['pontuacao_obtida' => $validated['pontuacao']]);
+        $precisaEvoluir = collect(EquipeMissaoUser::COMPETENCIAS)
+            ->keys()
+            ->contains(fn ($campo) => $validated[$campo] !== 'dominado');
+        if ($precisaEvoluir && blank($validated['proximo_passo'] ?? null)) {
+            return back()->withErrors([
+                'proximo_passo' => 'Indique um próximo passo quando alguma competência ainda não foi dominada.',
+            ]);
+        }
 
-        return back()->with('success', 'Pontuação atribuída.');
+        $dadosAvaliacao = collect($validated)
+            ->except(['registro_id', 'pontuacao'])
+            ->all();
+        $dadosAvaliacao['pontuacao_obtida'] = $validated['pontuacao'];
+        $registro->update($dadosAvaliacao);
+
+        return back()->with('success', 'Avaliação e próximo passo registrados.');
     }
 }
