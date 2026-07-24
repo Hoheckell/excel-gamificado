@@ -24,12 +24,19 @@ class MissaoController extends Controller
         $this->authorizeResource(Missao::class, 'missao');
     }
 
-    public function index(): View
+    public function index(MissionHtmlSanitizer $sanitizer): View
     {
         $missoes = Missao::with(['equipes:id,nome', 'equipes.alunos:id,name,equipe_id', 'progresso.papeis'])
             ->withCount('equipes')
             ->orderBy('ordem')
             ->paginate(15);
+
+        $missoes->getCollection()->each(function (Missao $missao) use ($sanitizer): void {
+            $missao->setAttribute(
+                'descricao_preview_html',
+                $sanitizer->sanitize($missao->descricao)
+            );
+        });
 
         return view('missoes.index', compact('missoes'));
     }

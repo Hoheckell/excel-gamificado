@@ -367,6 +367,12 @@ class GamificationTest extends TestCase
             ->assertDontSee('javascript:alert(2)')
             ->assertSee('Abrir URL de apoio')
             ->assertSee('roteiro.jpg');
+
+        $this->actingAs($professor)->get(route('missoes.index'))
+            ->assertOk()
+            ->assertSee('<strong>PROCV</strong>', false)
+            ->assertDontSee('alert(1)')
+            ->assertDontSee('javascript:alert(2)');
     }
 
     public function test_mission_rejects_unsafe_url_disallowed_extension_and_attachment_over_three_megabytes(): void

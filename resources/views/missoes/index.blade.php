@@ -33,7 +33,9 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <h3 class="text-white font-semibold text-base">{{ $missao->ordem }}. {{ $missao->titulo }}</h3>
-                                <p class="text-white/80 text-xs mt-1">{{ Str::limit(strip_tags($missao->descricao), 120) }}</p>
+                                <div class="prose prose-sm prose-invert max-w-none max-h-12 overflow-hidden text-white/80 mt-1 [&_*]:my-0 [&_a]:text-white">
+                                    {!! $missao->descricao_preview_html !!}
+                                </div>
                                 <div class="flex items-center gap-4 mt-1">
                                     <span class="text-white/70 text-xs">{{ $missao->created_at->format('d/m/Y') }}</span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">
