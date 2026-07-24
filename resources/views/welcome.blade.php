@@ -55,7 +55,7 @@
                 </div>
 
                 <a href="{{ route('regras') }}" class="inline-block text-sm text-excel-dark hover:text-excel-light font-semibold mb-5 underline underline-offset-4">
-                    Ver Regras do Sistema
+                    Conheça o Sistema
                 </a>
 
                 @if (Route::has('login'))

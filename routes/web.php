@@ -17,6 +17,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/regras', function () {
+    return view('regras');
+})->name('regras');
+
 Route::get('/certificados/validar/{codigo}', [CertificadoController::class, 'validar'])->name('certificados.validar');
 
 Route::middleware([
@@ -63,10 +67,6 @@ Route::middleware([
     Route::post('sorteio/concluir', [SorteioController::class, 'concluir'])->name('sorteio.concluir');
 
     Route::get('placar', [PlacarController::class, 'index'])->name('placar.index');
-
-    Route::get('/regras', function () {
-        return view('regras');
-    })->name('regras');
 
     Route::get('/certificado-modelo', function () {
         return view('certificado-modelo');

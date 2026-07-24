@@ -2,26 +2,29 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class RulesPageTest extends TestCase
 {
-    use RefreshDatabase;
-
-    public function test_regras_explicam_bonus_de_colaboracao_e_badge_salva_vidas(): void
+    public function test_pagina_de_apresentacao_e_publica_e_nao_expoe_regras_internas(): void
     {
-        $professor = User::factory()->create(['tipo' => 'professor']);
-
-        $this->actingAs($professor)
-            ->get(route('regras'))
+        $this->get(route('regras'))
             ->assertOk()
-            ->assertSee('Regra de ouro: ensinar sem executar pelo colega')
-            ->assertSee('Bônus de Colaboração (+20)')
-            ->assertSee('Badge Salva-Vidas (+15 XP)')
-            ->assertSee('A equipe que ajudou e a equipe ajudada')
-            ->assertSee('Somente a equipe que prestou a orientação')
-            ->assertSee('100 + 20 + 15 = 135 pontos');
+            ->assertSee('Aprender Excel de forma prática, colaborativa e motivadora')
+            ->assertSee('Aprender fazendo')
+            ->assertSee('Colaborar')
+            ->assertSee('Acompanhar a evolução')
+            ->assertSee('Entrar no sistema')
+            ->assertDontSee('Bônus de Colaboração')
+            ->assertDontSee('Badge Salva-Vidas')
+            ->assertDontSee('500 Pontos');
+    }
+
+    public function test_pagina_inicial_apresenta_link_para_conhecer_o_sistema(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Conheça o Sistema')
+            ->assertSee(route('regras'), false);
     }
 }
