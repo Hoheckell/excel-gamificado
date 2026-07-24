@@ -461,14 +461,46 @@ class MissaoController extends Controller
         }
 
         $entrega = EquipeMissao::where($validatedIds)->firstOrFail();
-        $dados = ['resposta' => $validated['resposta'] ?? null];
+        $reenvioPendente = $entrega->reenvio_solicitado_em && ! $entrega->reenvio_entregue_em;
+        $avaliacaoRegistrada = EquipeMissaoUser::where($validatedIds)
+            ->whereNotNull('pontuacao_obtida')
+            ->exists();
+        $editandoResposta = ! $request->hasFile('anexo')
+            && $missao->permite_resposta
+            && array_key_exists('resposta', $validated);
+
+        if ($entrega->anexo_path && ! $reenvioPendente && ! $editandoResposta) {
+            return back()->withErrors(['entrega' => 'A entrega já foi enviada. Um novo anexo depende de solicitação do professor.']);
+        }
+        if (($entrega->resposta || $entrega->anexo_path) && $editandoResposta && $avaliacaoRegistrada) {
+            return back()->withErrors(['resposta' => 'A resposta textual não pode mais ser editada após a avaliação do professor.']);
+        }
+        if ($reenvioPendente && ! $request->hasFile('anexo')) {
+            return back()->withErrors(['anexo' => 'Selecione o novo anexo solicitado pelo professor.']);
+        }
+
+        $dados = [];
+        if (! $avaliacaoRegistrada && array_key_exists('resposta', $validated)) {
+            $dados['resposta'] = $validated['resposta'];
+        }
         if ($request->hasFile('anexo')) {
+            $anexoAnterior = $entrega->anexo_path;
             $dados['anexo_path'] = $request->file('anexo')->store('anexos-missoes');
             $dados['anexo_nome_original'] = $request->file('anexo')->getClientOriginalName();
+            if ($reenvioPendente) {
+                $dados['reenvio_entregue_em'] = now();
+            }
         }
         $entrega->update($dados);
+        if (isset($anexoAnterior) && $anexoAnterior !== $entrega->anexo_path) {
+            Storage::delete($anexoAnterior);
+        }
 
-        return back()->with('success', 'Entrega da equipe enviada com sucesso.');
+        return back()->with('success', match (true) {
+            $reenvioPendente => 'Novo anexo enviado com sucesso. A pontuação atual foi preservada e o professor poderá reavaliar a entrega.',
+            $editandoResposta && ($entrega->resposta || $entrega->anexo_path) => 'Resposta textual atualizada com sucesso.',
+            default => 'Entrega da equipe enviada com sucesso.',
+        });
     }
 
     public function baixarAnexo(Request $request, EquipeMissao $entrega): Response
@@ -484,6 +516,43 @@ class MissaoController extends Controller
         abort_unless($entrega->anexo_path && Storage::exists($entrega->anexo_path), 404);
 
         return Storage::download($entrega->anexo_path, $entrega->anexo_nome_original);
+    }
+
+    public function solicitarReenvio(Request $request, EquipeMissao $entrega): RedirectResponse
+    {
+        $validated = $request->validate([
+            'feedback_reenvio' => 'required|string|max:2000',
+        ]);
+
+        $this->authorize('atribuirEquipes', $entrega->missao);
+        if ($entrega->equipe->turma?->concluida_em) {
+            return back()->withErrors(['reenvio' => 'Não é possível solicitar reenvio porque a turma foi concluída.']);
+        }
+        if (! $entrega->missao->permite_anexo || ! $entrega->anexo_path) {
+            return back()->withErrors(['reenvio' => 'A equipe precisa ter enviado um anexo antes da solicitação de reenvio.']);
+        }
+
+        $ausentes = EquipeMissaoUser::where('equipe_id', $entrega->equipe_id)
+            ->where('missao_id', $entrega->missao_id)
+            ->where('status', 'ausente')
+            ->pluck('user_id');
+        $membrosPresentes = $entrega->equipe->alunos->whereNotIn('id', $ausentes)->pluck('id');
+        $concluidos = EquipeMissaoUser::where('equipe_id', $entrega->equipe_id)
+            ->where('missao_id', $entrega->missao_id)
+            ->whereIn('user_id', $membrosPresentes)
+            ->where('status', 'concluida')
+            ->count();
+        if ($membrosPresentes->isEmpty() || $concluidos !== $membrosPresentes->count()) {
+            return back()->withErrors(['reenvio' => 'O reenvio só pode ser solicitado após a missão ser concluída pela equipe.']);
+        }
+
+        $entrega->update([
+            'feedback_reenvio' => $validated['feedback_reenvio'],
+            'reenvio_solicitado_em' => now(),
+            'reenvio_entregue_em' => null,
+        ]);
+
+        return back()->with('success', 'Reenvio do anexo solicitado sem alterar a pontuação.');
     }
 
     public function pontuar(Request $request): RedirectResponse

@@ -209,6 +209,282 @@ class GamificationTest extends TestCase
         Storage::disk('local')->assertExists($entrega->anexo_path);
     }
 
+    public function test_professor_can_request_attachment_resubmission_with_feedback_without_changing_score(): void
+    {
+        Storage::fake('local');
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+        ]);
+        Storage::disk('local')->put('anexos-missoes/original.xlsx', 'original');
+        foreach ($members as $member) {
+            EquipeMissaoUser::create([
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'user_id' => $member->id,
+                'status' => 'concluida',
+                'pontuacao_obtida' => 80,
+            ]);
+        }
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+
+        $this->actingAs($professor)->post(route('missoes.solicitarReenvio', $entrega->id), [
+            'feedback_reenvio' => 'Corrijam as referências absolutas e reenviem a planilha.',
+        ])->assertSessionHasNoErrors();
+
+        $entrega->refresh();
+        $this->assertSame('Corrijam as referências absolutas e reenviem a planilha.', $entrega->feedback_reenvio);
+        $this->assertNotNull($entrega->reenvio_solicitado_em);
+        $this->assertNull($entrega->reenvio_entregue_em);
+        $this->assertSame([80, 80], EquipeMissaoUser::where('missao_id', $missao->id)->pluck('pontuacao_obtida')->all());
+    }
+
+    public function test_team_resubmits_requested_attachment_and_original_score_is_preserved(): void
+    {
+        Storage::fake('local');
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+            'feedback_reenvio' => 'Revise a fórmula.',
+            'reenvio_solicitado_em' => now(),
+        ]);
+        Storage::disk('local')->put('anexos-missoes/original.xlsx', 'original');
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 75,
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'anexo' => UploadedFile::fake()->create('corrigido.xlsx', 100),
+        ])->assertSessionHasNoErrors();
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertSame('corrigido.xlsx', $entrega->anexo_nome_original);
+        $this->assertNotNull($entrega->reenvio_entregue_em);
+        $this->assertSame(75, $registro->fresh()->pontuacao_obtida);
+        Storage::disk('local')->assertMissing('anexos-missoes/original.xlsx');
+        Storage::disk('local')->assertExists($entrega->anexo_path);
+    }
+
+    public function test_attachment_resubmission_requires_professor_feedback(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+
+        $this->actingAs($professor)->post(route('missoes.solicitarReenvio', $entrega->id), [
+            'feedback_reenvio' => '',
+        ])->assertSessionHasErrors('feedback_reenvio');
+
+        $this->assertNull($entrega->fresh()->reenvio_solicitado_em);
+    }
+
+    public function test_team_can_edit_text_response_only_before_professor_assessment(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, true);
+        $equipe->missoes()->attach($missao, ['resposta' => 'Primeira resposta']);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Resposta revisada antes da avaliação',
+        ])->assertSessionHasNoErrors();
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertSame('Resposta revisada antes da avaliação', $entrega->resposta);
+
+        $registro->update(['pontuacao_obtida' => 80]);
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Tentativa depois da avaliação',
+        ])->assertSessionHasErrors('resposta');
+
+        $this->assertSame('Resposta revisada antes da avaliação', $entrega->fresh()->resposta);
+        $this->actingAs($members[0])->get(route('equipes.index'))
+            ->assertOk()
+            ->assertDontSee('Editar resposta textual');
+    }
+
+    public function test_professor_sees_resubmitted_attachment_as_ready_for_reassessment(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/corrigido.xlsx',
+            'anexo_nome_original' => 'corrigido.xlsx',
+            'feedback_reenvio' => 'Revise a fórmula.',
+            'reenvio_solicitado_em' => now()->subMinute(),
+            'reenvio_entregue_em' => now(),
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 75,
+        ]);
+
+        $this->actingAs($professor)->get(route('equipes.index'))
+            ->assertOk()
+            ->assertSee('Novo anexo pronto para reavaliação')
+            ->assertSee('Revisar avaliação');
+    }
+
+    public function test_student_cannot_request_attachment_resubmission(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+
+        $this->actingAs($members[0])->post(route('missoes.solicitarReenvio', $entrega->id), [
+            'feedback_reenvio' => 'Tentativa sem autorização.',
+        ])->assertForbidden();
+
+        $this->assertNull($entrega->fresh()->reenvio_solicitado_em);
+    }
+
+    public function test_professor_cannot_request_resubmission_before_team_finishes_mission(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(2);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+        ]);
+        foreach ($members as $index => $member) {
+            EquipeMissaoUser::create([
+                'equipe_id' => $equipe->id,
+                'missao_id' => $missao->id,
+                'user_id' => $member->id,
+                'status' => $index === 0 ? 'concluida' : 'em_andamento',
+            ]);
+        }
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+
+        $this->actingAs($professor)->post(route('missoes.solicitarReenvio', $entrega->id), [
+            'feedback_reenvio' => 'Corrija a planilha.',
+        ])->assertSessionHasErrors('reenvio');
+
+        $this->assertNull($entrega->fresh()->reenvio_solicitado_em);
+    }
+
+    public function test_requested_resubmission_requires_a_new_attachment(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, true, true);
+        $equipe->missoes()->attach($missao, [
+            'resposta' => 'Resposta avaliada.',
+            'anexo_path' => 'anexos-missoes/original.xlsx',
+            'anexo_nome_original' => 'original.xlsx',
+            'feedback_reenvio' => 'Corrija o arquivo.',
+            'reenvio_solicitado_em' => now(),
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 70,
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+        ])->assertSessionHasErrors('anexo');
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertNull($entrega->reenvio_entregue_em);
+        $this->assertSame('Resposta avaliada.', $entrega->resposta);
+    }
+
+    public function test_professor_can_reassess_after_attachment_resubmission(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, false, true);
+        $equipe->missoes()->attach($missao, [
+            'anexo_path' => 'anexos-missoes/corrigido.xlsx',
+            'anexo_nome_original' => 'corrigido.xlsx',
+            'feedback_reenvio' => 'Revise a fórmula.',
+            'reenvio_solicitado_em' => now()->subMinute(),
+            'reenvio_entregue_em' => now(),
+        ]);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 70,
+            'competencia_formulas' => 'em_desenvolvimento',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+            'proximo_passo' => 'Corrigir as referências.',
+        ]);
+
+        $this->actingAs($professor)->post(route('missoes.pontuar'), [
+            'registro_id' => $registro->id,
+            'pontuacao' => 90,
+            'competencia_formulas' => 'dominado',
+            'competencia_qualidade' => 'dominado',
+            'competencia_visual' => 'dominado',
+            'competencia_colaboracao' => 'dominado',
+            'feedback_professor' => 'O novo arquivo corrigiu as referências.',
+            'proximo_passo' => '',
+        ])->assertSessionHasNoErrors();
+
+        $registro->refresh();
+        $this->assertSame(90, $registro->pontuacao_obtida);
+        $this->assertSame('dominado', $registro->competencia_formulas);
+        $this->assertSame('O novo arquivo corrigiu as referências.', $registro->feedback_professor);
+    }
+
     public function test_absence_reported_before_start_is_preserved_and_role_is_only_required_for_present_members(): void
     {
         [$turma, $equipe, $members] = $this->teamWithMembers(3);

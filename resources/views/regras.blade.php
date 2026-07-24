@@ -53,7 +53,62 @@
             </div>
         </div>
 
-        {{-- 2. Barra de XP Dinâmica com Checkpoints --}}
+        {{-- 2. Jornada completa do aluno --}}
+        <section class="portal-container" aria-labelledby="jornada-aluno-titulo">
+            <div class="excel-ribbon px-6 py-4">
+                <h3 id="jornada-aluno-titulo" class="text-white font-semibold text-lg flex items-center gap-2">
+                    <span>🧭</span> Jornada completa do aluno
+                </h3>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <h4 class="font-bold text-sm text-[--text-main]">1. Entre na turma e organize sua equipe</h4>
+                    <p class="text-xs text-[--text-muted] mt-1 leading-relaxed">Use o código da turma ativa. Depois, participe de uma equipe criada pelo professor, sorteada pelo sistema ou formada com autorização docente. O XP, os badges e a entrega pertencem à equipe; o progresso, o papel e o feedback pedagógico também são acompanhados individualmente.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="rounded-excel border border-blue-200 bg-blue-50 p-4">
+                        <h4 class="font-bold text-sm text-blue-800">2. Comece a missão com um papel claro</h4>
+                        <p class="text-xs text-blue-700 mt-1.5 leading-relaxed">A equipe distribui os papéis entre todos os presentes e inicia a missão. O rodízio ajuda cada pessoa a praticar fórmulas, qualidade, apresentação e organização. Se alguém faltar, a ausência deve ser comunicada antes da conclusão e não pode ser desfeita naquela missão.</p>
+                    </div>
+                    <div class="rounded-excel border border-purple-200 bg-purple-50 p-4">
+                        <h4 class="font-bold text-sm text-purple-800">3. Execute sua parte e conclua individualmente</h4>
+                        <p class="text-xs text-purple-700 mt-1.5 leading-relaxed">O cronômetro registra o tempo de participação de cada integrante. Concluir sua parte não gera pontos automaticamente e não encerra o trabalho coletivo: todos os membros presentes precisam concluir para liberar a entrega oficial.</p>
+                    </div>
+                </div>
+
+                <div class="rounded-excel border border-excel-light bg-excel-tint p-4">
+                    <h4 class="font-bold text-sm text-excel-dark">4. Faça uma única entrega da equipe</h4>
+                    <p class="text-xs text-[--text-main] mt-1.5 leading-relaxed">Quando todos os presentes concluírem, a equipe envia a resposta textual e/ou o Arquivo Mestre, conforme a missão. Antes da avaliação do professor, a resposta textual pode ser editada. Um anexo enviado não pode ser substituído por iniciativa da equipe.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="rounded-excel border border-slate-200 bg-white p-4">
+                        <span class="block text-xs font-bold uppercase tracking-wider text-slate-500">5. Avaliação</span>
+                        <p class="text-xs text-[--text-muted] mt-2 leading-relaxed">O professor registra nota, níveis de competência, feedback e próximo passo para cada integrante. A partir da primeira avaliação, a resposta textual fica bloqueada para preservar aquilo que foi analisado.</p>
+                    </div>
+                    <div class="rounded-excel border border-amber-200 bg-amber-50 p-4">
+                        <span class="block text-xs font-bold uppercase tracking-wider text-amber-700">6. Correção do anexo</span>
+                        <p class="text-xs text-amber-800 mt-2 leading-relaxed">Se o arquivo precisar de ajustes, somente o professor solicita o reenvio e explica o que corrigir. A missão permanece concluída e a pontuação atual não muda. A equipe substitui apenas o anexo solicitado.</p>
+                    </div>
+                    <div class="rounded-excel border border-green-200 bg-green-50 p-4">
+                        <span class="block text-xs font-bold uppercase tracking-wider text-green-700">7. Reavaliação</span>
+                        <p class="text-xs text-green-800 mt-2 leading-relaxed">Depois que o novo arquivo chegar, o professor pode revisar a avaliação. O feedback orienta a melhoria; pontos só mudam se o professor decidir atualizar a nota durante essa nova análise.</p>
+                    </div>
+                </div>
+
+                <div class="rounded-excel border border-gray-200 bg-gray-50 p-4">
+                    <h4 class="font-bold text-sm text-[--text-main]">8. Acompanhe seu aprendizado e o encerramento</h4>
+                    <p class="text-xs text-[--text-muted] mt-1.5 leading-relaxed">Em Minha Jornada, acompanhe papel, progresso, rubrica, feedback e próximo passo. O placar usa patamares para mostrar o avanço da equipe, sem streaks ou punição por pausa. Quando a turma for concluída pelo professor, o encerramento é definitivo e os anexos são apagados; o histórico pedagógico permanece disponível.</p>
+                </div>
+
+                <p class="text-xs font-semibold text-excel-dark border-l-4 border-excel-dark pl-3">
+                    O objetivo é aprender Excel com autonomia: XP e badges reconhecem resultados, mas não substituem a prática, a colaboração e o uso do feedback.
+                </p>
+            </div>
+        </section>
+
+        {{-- 3. Barra de XP Dinâmica com Checkpoints --}}
         <div class="portal-container">
             <div class="bg-white px-6 py-5 border-b border-[--border-light]">
                 <div class="flex items-center justify-between mb-2">

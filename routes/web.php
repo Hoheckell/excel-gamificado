@@ -42,6 +42,7 @@ Route::middleware([
     Route::post('missoes/comunicar-falta', [MissaoController::class, 'comunicarFalta'])->name('missoes.comunicarFalta');
     Route::post('missoes/entregar', [MissaoController::class, 'entregar'])->name('missoes.entregar');
     Route::get('missoes/entregas/{entrega}/anexo', [MissaoController::class, 'baixarAnexo'])->name('missoes.anexo');
+    Route::post('missoes/entregas/{entrega}/solicitar-reenvio', [MissaoController::class, 'solicitarReenvio'])->name('missoes.solicitarReenvio');
     Route::post('missoes/pontuar', [MissaoController::class, 'pontuar'])->name('missoes.pontuar');
 
     Route::post('equipes/{equipe}/add-points', [EquipeController::class, 'addPoints'])->name('equipes.addPoints');

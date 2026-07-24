@@ -269,9 +269,14 @@
                                             @endif
 
                                             @if (! $equipe->turma?->concluida_em && $todosConcluiram && ($missao->permite_resposta || $missao->permite_anexo))
-                                                @if (! $missao->pivot->resposta && ! $missao->pivot->anexo_path)
+                                                @php
+                                                    $reenvioPendente = $missao->pivot->reenvio_solicitado_em && ! $missao->pivot->reenvio_entregue_em;
+                                                    $avaliacaoRegistrada = $progressos->whereNotNull('pontuacao_obtida')->isNotEmpty();
+                                                    $podeEditarResposta = $missao->permite_resposta && $missao->pivot->resposta && ! $avaliacaoRegistrada;
+                                                @endphp
+                                                @if ((! $missao->pivot->resposta && ! $missao->pivot->anexo_path) || $reenvioPendente || $podeEditarResposta)
                                                     <button type="button" onclick="document.getElementById('entregaModal{{ $missao->pivot->id }}').classList.remove('hidden')" class="text-[10px] font-bold px-2.5 py-1 rounded bg-excel-dark text-white hover:bg-excel-light transition">
-                                                        Enviar entrega da equipe
+                                                        {{ $reenvioPendente ? 'Reenviar anexo solicitado' : ($podeEditarResposta ? 'Editar resposta textual' : 'Enviar entrega da equipe') }}
                                                     </button>
                                                     <div id="entregaModal{{ $missao->pivot->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
                                                         <div class="bg-white rounded-excel w-full max-w-md shadow-xl overflow-hidden text-left">
@@ -280,11 +285,18 @@
                                                                 @csrf
                                                                 <input type="hidden" name="equipe_id" value="{{ $equipe->id }}">
                                                                 <input type="hidden" name="missao_id" value="{{ $missao->id }}">
-                                                                @if ($missao->permite_resposta)
-                                                                    <div><x-label for="resposta{{ $missao->pivot->id }}" value="Resposta (opcional)" /><textarea id="resposta{{ $missao->pivot->id }}" name="resposta" rows="4" maxlength="5000" class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light" placeholder="Digite a resposta da equipe..."></textarea></div>
+                                                                @if ($reenvioPendente)
+                                                                    <div class="rounded-excel border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                                                        <strong>Feedback do professor:</strong>
+                                                                        <p class="mt-1 whitespace-pre-line">{{ $missao->pivot->feedback_reenvio }}</p>
+                                                                        <p class="mt-2 text-xs">Envie somente o novo anexo. A pontuação já registrada não será alterada.</p>
+                                                                    </div>
                                                                 @endif
-                                                                @if ($missao->permite_anexo)
-                                                                    <div><x-label for="anexo{{ $missao->pivot->id }}" value="Anexo (opcional, até 10 MB)" /><input id="anexo{{ $missao->pivot->id }}" type="file" name="anexo" class="mt-1 block w-full text-xs text-[--text-muted] file:mr-3 file:rounded file:border-0 file:bg-excel-tint file:px-3 file:py-2 file:text-xs file:font-semibold file:text-excel-dark"></div>
+                                                                @if ($missao->permite_resposta && ! $avaliacaoRegistrada)
+                                                                    <div><x-label for="resposta{{ $missao->pivot->id }}" value="Resposta (opcional)" /><textarea id="resposta{{ $missao->pivot->id }}" name="resposta" rows="4" maxlength="5000" class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-excel-dark focus:ring-excel-light" placeholder="Digite a resposta da equipe...">{{ $missao->pivot->resposta }}</textarea></div>
+                                                                @endif
+                                                                @if ($missao->permite_anexo && (! $missao->pivot->anexo_path || $reenvioPendente))
+                                                                    <div><x-label for="anexo{{ $missao->pivot->id }}" :value="$reenvioPendente ? 'Novo anexo (obrigatório, até 10 MB)' : 'Anexo (opcional, até 10 MB)'" /><input id="anexo{{ $missao->pivot->id }}" type="file" name="anexo" @required($reenvioPendente) class="mt-1 block w-full text-xs text-[--text-muted] file:mr-3 file:rounded file:border-0 file:bg-excel-tint file:px-3 file:py-2 file:text-xs file:font-semibold file:text-excel-dark"></div>
                                                                 @endif
                                                                 <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-button>Enviar entrega</x-button></div>
                                                             </form>
@@ -386,7 +398,38 @@
                                                                 <a href="{{ route('missoes.anexo', $missao->pivot->id) }}" class="font-semibold text-excel-dark underline">Baixar anexo: {{ $missao->pivot->anexo_nome_original }}</a>
                                                             @endif
                                                         @endif
+                                                        @if ($missao->pivot->feedback_reenvio)
+                                                            <div class="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5">
+                                                                <strong>Feedback para reenvio:</strong>
+                                                                <p class="whitespace-pre-line">{{ $missao->pivot->feedback_reenvio }}</p>
+                                                                <span class="font-semibold {{ $missao->pivot->reenvio_entregue_em ? 'text-green-700' : 'text-amber-700' }}">
+                                                                    {{ $missao->pivot->reenvio_entregue_em ? 'Novo anexo recebido' : 'Aguardando novo anexo da equipe' }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
+                                                        @if ($missao->pivot->reenvio_entregue_em)
+                                                            <p class="mt-2 font-semibold text-green-700">Novo anexo pronto para reavaliação. Use “Revisar avaliação” em cada integrante.</p>
+                                                        @endif
                                                     </div>
+                                                    @if ($missao->permite_anexo && $missao->pivot->anexo_path && ! $equipe->turma?->concluida_em && ! ($missao->pivot->reenvio_solicitado_em && ! $missao->pivot->reenvio_entregue_em))
+                                                        <button type="button" onclick="document.getElementById('reenvioModal{{ $missao->pivot->id }}').classList.remove('hidden')" class="mt-1 text-[10px] font-bold text-amber-700 underline hover:text-amber-900">
+                                                            Solicitar reenvio do anexo
+                                                        </button>
+                                                        <div id="reenvioModal{{ $missao->pivot->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+                                                            <div class="bg-white rounded-excel w-full max-w-md shadow-xl overflow-hidden text-left">
+                                                                <div class="bg-amber-600 px-5 py-3"><h3 class="text-white font-semibold">Solicitar reenvio — {{ $missao->titulo }}</h3></div>
+                                                                <form method="POST" action="{{ route('missoes.solicitarReenvio', $missao->pivot->id) }}" class="p-5 space-y-4">
+                                                                    @csrf
+                                                                    <p class="text-xs text-[--text-muted]">A missão continuará concluída e nenhuma pontuação será criada ou alterada.</p>
+                                                                    <div>
+                                                                        <x-label for="feedbackReenvio{{ $missao->pivot->id }}" value="Feedback para a equipe" />
+                                                                        <textarea id="feedbackReenvio{{ $missao->pivot->id }}" name="feedback_reenvio" rows="4" maxlength="2000" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-sm focus:border-amber-600 focus:ring-amber-300" placeholder="Explique objetivamente o que deve ser corrigido no anexo."></textarea>
+                                                                    </div>
+                                                                    <div class="flex justify-end gap-3"><button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="text-sm text-[--text-muted]">Cancelar</button><x-button>Solicitar reenvio</x-button></div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 @endif
                                                 @php
                                                     $concluidos = $progressos->where('status', 'concluida');

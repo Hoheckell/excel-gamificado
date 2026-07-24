@@ -39,6 +39,20 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Multiclasse automática para 1 a 4 presentes, sempre cobrindo os quatro papéis
 - Equipes com até 3 presentes recebem 5 minutos extras sem alteração de XP
 - Rodízio compara a distribuição anterior e se adapta às mudanças de presença
+- A resposta textual da equipe pode ser corrigida enquanto nenhum integrante tiver sido avaliado
+- Depois da primeira avaliação, a resposta textual fica bloqueada para preservar o conteúdo avaliado
+- O professor pode solicitar um novo anexo após a conclusão, sempre com feedback obrigatório
+- O reenvio substitui o arquivo anterior, preserva a conclusão e a pontuação vigente e libera nova avaliação
+
+### Fluxo de entrega e reavaliação
+1. Cada integrante presente inicia a missão com o papel definido para a rodada.
+2. A conclusão é individual; a entrega da equipe só é liberada quando todos os presentes concluírem.
+3. A equipe envia uma única resposta textual e/ou um único anexo, conforme a configuração da missão.
+4. Antes da avaliação, a equipe pode editar a resposta textual. Um anexo já enviado não pode ser trocado espontaneamente.
+5. O professor avalia cada integrante com nota, rubrica, feedback e próximo passo.
+6. Se o arquivo precisar de correção, o professor solicita o reenvio e escreve um feedback específico para a equipe.
+7. A equipe envia o novo anexo; o sistema apaga o arquivo substituído e mantém as pontuações registradas.
+8. O professor pode revisar as avaliações diante do novo arquivo. A resposta textual continua bloqueada depois da primeira avaliação.
 
 ### Minha Jornada
 - Painel do aluno com missão atual, papel, andamento, próxima ação e feedback privado
@@ -127,6 +141,16 @@ npm run test:e2e
 ```
 
 Os testes cobrem autenticação, regras de autorização, turmas, equipes, missões, categorias, badges, placar, regras e certificados. A cobertura de missões inclui sanitização de HTML, validação e armazenamento privado de anexos, limite por arquivo, exclusão ao concluir a turma, bloqueio de novos envios e indisponibilidade de URLs antigas.
+
+O ciclo de entrega possui cenários específicos para:
+
+- bloqueio até todos os integrantes presentes concluírem;
+- edição da resposta textual somente antes da avaliação;
+- solicitação de reenvio restrita ao professor, após a conclusão e com feedback obrigatório;
+- substituição segura do anexo e remoção do arquivo anterior;
+- preservação da pontuação durante o reenvio;
+- nova avaliação do professor após o recebimento do arquivo corrigido;
+- comunicação da jornada completa na página de regras.
 
 ## Design System
 

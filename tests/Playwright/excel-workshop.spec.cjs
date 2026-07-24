@@ -131,4 +131,21 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await expect(page.getByText('Consultor Sênior executa os quatro papéis em sequência.')).toBeVisible();
     await expect(page.getByText('Contrato Enxuto:', { exact: false })).toBeVisible();
   });
+
+  test('Regras explicam toda a jornada de entrega e reavaliação do aluno', async ({ page }) => {
+    await page.getByRole('link', { name: 'Regras' }).click();
+    const jornada = page.getByRole('region', { name: 'Jornada completa do aluno' });
+
+    await expect(jornada).toBeVisible();
+    await expect(jornada.getByText('1. Entre na turma e organize sua equipe')).toBeVisible();
+    await expect(jornada.getByText('2. Comece a missão com um papel claro')).toBeVisible();
+    await expect(jornada.getByText('3. Execute sua parte e conclua individualmente')).toBeVisible();
+    await expect(jornada.getByText('4. Faça uma única entrega da equipe')).toBeVisible();
+    await expect(jornada.getByText('5. Avaliação')).toBeVisible();
+    await expect(jornada.getByText('6. Correção do anexo')).toBeVisible();
+    await expect(jornada.getByText('7. Reavaliação')).toBeVisible();
+    await expect(jornada.getByText('8. Acompanhe seu aprendizado e o encerramento')).toBeVisible();
+    await expect(jornada.getByText('a resposta textual fica bloqueada', { exact: false })).toBeVisible();
+    await expect(jornada.getByText('a pontuação atual não muda', { exact: false })).toBeVisible();
+  });
 });

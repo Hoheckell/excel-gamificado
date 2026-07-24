@@ -19,12 +19,17 @@ class EquipeMissao extends Pivot
         'anexo_path',
         'anexo_nome_original',
         'anexo_removido_em',
+        'feedback_reenvio',
+        'reenvio_solicitado_em',
+        'reenvio_entregue_em',
         'tempo_extra_minutos',
     ];
 
     protected $casts = [
         'tempo_extra_minutos' => 'integer',
         'anexo_removido_em' => 'datetime',
+        'reenvio_solicitado_em' => 'datetime',
+        'reenvio_entregue_em' => 'datetime',
     ];
 
     public function equipe()
