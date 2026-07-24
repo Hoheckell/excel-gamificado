@@ -24,7 +24,13 @@ class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+            'educational_emails_consent' => ['sometimes', 'accepted'],
         ])->validate();
+
+        $educationalEmailsConsent = filter_var(
+            $input['educational_emails_consent'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
 
         return User::create([
             'name' => $input['name'],
@@ -32,6 +38,9 @@ class CreateNewUser implements CreatesNewUsers
             'password' => Hash::make($input['password']),
             'tipo' => 'aluno',
             'autorizado' => false,
+            'educational_emails_consent' => $educationalEmailsConsent,
+            'educational_emails_consented_at' => $educationalEmailsConsent ? now() : null,
+            'educational_emails_consent_revoked_at' => null,
         ]);
     }
 }

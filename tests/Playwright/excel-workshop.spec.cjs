@@ -14,6 +14,44 @@ test.describe('Páginas Públicas', { tag: '@public' }, () => {
     await expect(page.getByLabel('Senha')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible();
   });
+
+  test('Cadastro exige aceite e oferece acesso aos Termos de Uso', async ({ page, context }) => {
+    await page.goto('/register');
+
+    const aceite = page.getByRole('checkbox', { name: /concordo com os Termos de Uso/i });
+    await expect(aceite).toBeVisible();
+    await expect(aceite).toHaveAttribute('required', /required/);
+    await expect(aceite).not.toBeChecked();
+
+    const emailsEducacionais = page.getByRole('checkbox', { name: /Quero receber por e-mail conteúdos educacionais/i });
+    await expect(emailsEducacionais).toBeVisible();
+    await expect(emailsEducacionais).not.toBeChecked();
+    await expect(emailsEducacionais).toHaveJSProperty('required', false);
+    await expect(page.getByText('Recusar não afeta o cadastro', { exact: false })).toBeVisible();
+    await expect(page.getByText('não compartilhá-lo com terceiros', { exact: false })).toBeVisible();
+
+    const link = page.getByRole('link', { name: 'Termos de Uso', exact: true });
+    await expect(link).toBeVisible();
+
+    const [termos] = await Promise.all([
+      context.waitForEvent('page'),
+      link.click(),
+    ]);
+    await termos.waitForLoadState();
+    await expect(termos.getByRole('heading', { name: 'Termos de Uso', exact: true })).toBeVisible();
+    await expect(termos.getByText('Ao marcar o campo obrigatório no cadastro', { exact: false })).toBeVisible();
+
+    const politicaLink = page.getByRole('link', { name: 'Política de Privacidade', exact: true });
+    await expect(politicaLink).toBeVisible();
+    const [politica] = await Promise.all([
+      context.waitForEvent('page'),
+      politicaLink.click(),
+    ]);
+    await politica.waitForLoadState();
+    await expect(politica.getByRole('heading', { name: 'Política de Privacidade', exact: true })).toBeVisible();
+    await expect(politica.getByRole('heading', { name: /Direitos dos titulares/ })).toBeVisible();
+    await expect(politica.getByText('Os dados não são vendidos', { exact: false })).toBeVisible();
+  });
 });
 
 test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {

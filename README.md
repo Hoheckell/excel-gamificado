@@ -9,8 +9,22 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Acesso às rotas internas bloqueado até a confirmação do endereço
 - Alunos cadastrados pelo professor também recebem o link de verificação
 - Reenvio disponível para contas que ainda não confirmaram o e-mail
+- Cadastro público exige aceite explícito dos Termos de Uso, disponíveis em página pública
+- Política de Privacidade pública alinhada ao fluxo educacional e aos direitos previstos na LGPD
+- Consentimento opcional e revogável para conteúdos educacionais por e-mail, separado das comunicações essenciais
 - Perfis: **Professor** e **Aluno**
 - Interface totalmente em português
+
+### Privacidade, comunicações e cookies
+- Termos de Uso e Política de Privacidade disponíveis em páginas públicas
+- Aceite obrigatório dos Termos separado do consentimento para comunicações opcionais
+- Aluno pode consentir ou recusar conteúdos educacionais por e-mail sem impacto no cadastro
+- Consentimento para conteúdos educacionais pode ser revogado gratuitamente no perfil
+- Professor visualiza a preferência e se compromete a não compartilhar os contatos
+- A aplicação utiliza somente cookies próprios e estritamente necessários para sessão, autenticação, proteção CSRF e a opção **Lembrar-me**
+- Não há cookies de publicidade, análise comportamental, redes sociais ou terceiros no código atual
+- Por existirem apenas cookies necessários, não é exibido banner de consentimento; o uso é explicado na Política de Privacidade
+- Se cookies opcionais forem adicionados, eles deverão começar desativados e depender de escolha prévia, livre e granular do usuário
 
 ### Turmas
 - CRUD completo (professor)
@@ -141,6 +155,8 @@ npm run test:e2e
 ```
 
 Os testes cobrem autenticação, regras de autorização, turmas, equipes, missões, categorias, badges, placar, regras e certificados. A cobertura de missões inclui sanitização de HTML, validação e armazenamento privado de anexos, limite por arquivo, exclusão ao concluir a turma, bloqueio de novos envios e indisponibilidade de URLs antigas.
+
+A cobertura de autenticação também verifica o aceite obrigatório dos Termos, o consentimento opcional para conteúdos educacionais, sua revogação no perfil e o acesso público à Política de Privacidade. A necessidade de consentimento para cookies deve ser reavaliada sempre que forem adicionados serviços externos, métricas, vídeos incorporados, pixels ou outras tecnologias não essenciais.
 
 O ciclo de entrega possui cenários específicos para:
 

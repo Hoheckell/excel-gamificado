@@ -28,6 +28,9 @@
                     <div class="p-4 rounded-excel bg-[#f8faf8]">
                         <span class="text-xs text-[--text-muted] uppercase tracking-wider">E-mail</span>
                         <p class="font-semibold text-[--text-main] mt-0.5">{{ $aluno->email }}</p>
+                        <p class="mt-1 text-xs font-semibold {{ $aluno->educational_emails_consent ? 'text-green-700' : 'text-gray-500' }}">
+                            Conteúdo educacional opcional: {{ $aluno->educational_emails_consent ? 'autorizado' : 'não autorizado' }}
+                        </p>
                     </div>
                     <div class="p-4 rounded-excel bg-[#f8faf8]">
                         <span class="text-xs text-[--text-muted] uppercase tracking-wider">Equipe</span>

@@ -76,6 +76,11 @@
                                 </td>
                                 <td class="px-6 py-3 text-[--text-muted]">
                                     {{ auth()->user()->isProfessor() ? $aluno->email : '—' }}
+                                    @if (auth()->user()->isProfessor())
+                                        <span class="mt-1 block text-[10px] font-semibold {{ $aluno->educational_emails_consent ? 'text-green-700' : 'text-gray-500' }}">
+                                            Conteúdo educacional: {{ $aluno->educational_emails_consent ? 'autorizado' : 'não autorizado' }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-3">
                                     @if ($aluno->equipe)

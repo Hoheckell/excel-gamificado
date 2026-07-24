@@ -5,6 +5,7 @@ use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EducationalEmailPreferenceController;
 use App\Http\Controllers\EquipeController;
 use App\Http\Controllers\MissaoController;
 use App\Http\Controllers\PlacarController;
@@ -24,6 +25,8 @@ Route::middleware([
     'verified',
 ])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::patch('/profile/educational-emails', [EducationalEmailPreferenceController::class, 'update'])
+        ->name('profile.educational-emails.update');
 
     Route::resource('alunos', AlunoController::class)->except(['show']);
     Route::resource('equipes', EquipeController::class);

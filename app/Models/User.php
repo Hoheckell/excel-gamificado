@@ -32,6 +32,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'tipo',
         'equipe_id',
         'autorizado',
+        'educational_emails_consent',
+        'educational_emails_consented_at',
+        'educational_emails_consent_revoked_at',
     ];
 
     protected $hidden = [
@@ -51,6 +54,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'autorizado' => 'boolean',
+            'educational_emails_consent' => 'boolean',
+            'educational_emails_consented_at' => 'datetime',
+            'educational_emails_consent_revoked_at' => 'datetime',
         ];
     }
 

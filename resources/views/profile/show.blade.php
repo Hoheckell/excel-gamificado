@@ -9,6 +9,32 @@
             <x-section-border />
         @endif
 
+        @if (auth()->user()->isAluno())
+            <section class="mt-8 sm:mt-8" aria-labelledby="preferencia-emails-titulo">
+                <div class="bg-white shadow-sm rounded-excel border border-[--border-light]">
+                    <div class="px-6 py-5 border-b border-[--border-light]">
+                        <h3 id="preferencia-emails-titulo" class="text-lg font-semibold text-[--text-main]">Conteúdos educacionais por e-mail</h3>
+                        <p class="mt-1 text-sm text-[--text-muted]">Escolha livremente se deseja receber materiais complementares, dicas e convites enviados pelo professor.</p>
+                    </div>
+                    <form method="POST" action="{{ route('profile.educational-emails.update') }}" class="p-6">
+                        @csrf
+                        @method('PATCH')
+                        <label for="profile_educational_emails_consent" class="flex items-start">
+                            <x-checkbox name="educational_emails_consent" id="profile_educational_emails_consent" value="1" :checked="auth()->user()->educational_emails_consent" class="mt-0.5" />
+                            <span class="ms-2 text-sm text-[--text-main]">Autorizo o recebimento de conteúdos educacionais opcionais por e-mail.</span>
+                        </label>
+                        <p class="ms-6 mt-2 text-xs leading-relaxed text-[--text-muted]">
+                            Você pode consentir ou revogar gratuitamente a qualquer momento. A alteração não interfere em e-mails essenciais da conta, segurança, atividades ou certificados. O professor deve usar seu contato somente para a finalidade autorizada e não pode compartilhá-lo com terceiros.
+                        </p>
+                        <div class="mt-4 flex items-center justify-end">
+                            <x-button>Salvar preferência</x-button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            <x-section-border />
+        @endif
+
         @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::updatePasswords()))
             <div class="mt-8 sm:mt-8">
                 @livewire('profile.update-password-form')
