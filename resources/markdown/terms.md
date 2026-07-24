@@ -24,7 +24,7 @@ O acesso a determinadas turmas, equipes ou funcionalidades pode depender de auto
 
 As missões podem registrar tempo, participação individual, papéis na equipe, respostas, anexos, notas, rubricas e feedbacks. A entrega da equipe somente é liberada conforme as regras apresentadas no próprio sistema.
 
-A resposta textual pode ser editada antes da avaliação do professor. Depois da avaliação, ela fica bloqueada. Quando o professor solicitar a correção de um anexo, o feedback indicará o que deve ser revisto; o novo arquivo substituirá o anterior e poderá ser reavaliado.
+A resposta textual pode ser editada antes da avaliação do professor. Depois da avaliação, ela fica bloqueada, salvo quando o professor solicitar sua reformulação com feedback em uma missão sem anexo. Quando o professor solicitar a correção de um anexo, o feedback indicará o que deve ser revisto; o novo arquivo substituirá o anterior e poderá ser reavaliado. A reformulação textual também poderá ser reavaliada, sem alteração automática da pontuação vigente.
 
 Pontuações, badges e posições nos patamares são recursos pedagógicos. Eles apoiam o aprendizado, mas não substituem os critérios acadêmicos, a participação e a avaliação do professor.
 

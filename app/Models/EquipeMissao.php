@@ -22,6 +22,9 @@ class EquipeMissao extends Pivot
         'feedback_reenvio',
         'reenvio_solicitado_em',
         'reenvio_entregue_em',
+        'feedback_reformulacao',
+        'reformulacao_solicitada_em',
+        'reformulacao_entregue_em',
         'tempo_extra_minutos',
     ];
 
@@ -30,6 +33,8 @@ class EquipeMissao extends Pivot
         'anexo_removido_em' => 'datetime',
         'reenvio_solicitado_em' => 'datetime',
         'reenvio_entregue_em' => 'datetime',
+        'reformulacao_solicitada_em' => 'datetime',
+        'reformulacao_entregue_em' => 'datetime',
     ];
 
     public function equipe()

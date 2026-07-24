@@ -462,6 +462,7 @@ class MissaoController extends Controller
 
         $entrega = EquipeMissao::where($validatedIds)->firstOrFail();
         $reenvioPendente = $entrega->reenvio_solicitado_em && ! $entrega->reenvio_entregue_em;
+        $reformulacaoPendente = $entrega->reformulacao_solicitada_em && ! $entrega->reformulacao_entregue_em;
         $avaliacaoRegistrada = EquipeMissaoUser::where($validatedIds)
             ->whereNotNull('pontuacao_obtida')
             ->exists();
@@ -472,16 +473,22 @@ class MissaoController extends Controller
         if ($entrega->anexo_path && ! $reenvioPendente && ! $editandoResposta) {
             return back()->withErrors(['entrega' => 'A entrega já foi enviada. Um novo anexo depende de solicitação do professor.']);
         }
-        if (($entrega->resposta || $entrega->anexo_path) && $editandoResposta && $avaliacaoRegistrada) {
+        if (($entrega->resposta || $entrega->anexo_path) && $editandoResposta && $avaliacaoRegistrada && ! $reformulacaoPendente) {
             return back()->withErrors(['resposta' => 'A resposta textual não pode mais ser editada após a avaliação do professor.']);
         }
         if ($reenvioPendente && ! $request->hasFile('anexo')) {
             return back()->withErrors(['anexo' => 'Selecione o novo anexo solicitado pelo professor.']);
         }
+        if ($reformulacaoPendente && blank($validated['resposta'] ?? null)) {
+            return back()->withErrors(['resposta' => 'Escreva a resposta reformulada solicitada pelo professor.']);
+        }
 
         $dados = [];
-        if (! $avaliacaoRegistrada && array_key_exists('resposta', $validated)) {
+        if ((! $avaliacaoRegistrada || $reformulacaoPendente) && array_key_exists('resposta', $validated)) {
             $dados['resposta'] = $validated['resposta'];
+            if ($reformulacaoPendente) {
+                $dados['reformulacao_entregue_em'] = now();
+            }
         }
         if ($request->hasFile('anexo')) {
             $anexoAnterior = $entrega->anexo_path;
@@ -498,6 +505,7 @@ class MissaoController extends Controller
 
         return back()->with('success', match (true) {
             $reenvioPendente => 'Novo anexo enviado com sucesso. A pontuação atual foi preservada e o professor poderá reavaliar a entrega.',
+            $reformulacaoPendente => 'Resposta reformulada com sucesso. A pontuação atual foi preservada e o professor poderá reavaliá-la.',
             $editandoResposta && ($entrega->resposta || $entrega->anexo_path) => 'Resposta textual atualizada com sucesso.',
             default => 'Entrega da equipe enviada com sucesso.',
         });
@@ -553,6 +561,43 @@ class MissaoController extends Controller
         ]);
 
         return back()->with('success', 'Reenvio do anexo solicitado sem alterar a pontuação.');
+    }
+
+    public function solicitarReformulacao(Request $request, EquipeMissao $entrega): RedirectResponse
+    {
+        $validated = $request->validate([
+            'feedback_reformulacao' => 'required|string|max:2000',
+        ]);
+
+        $this->authorize('atribuirEquipes', $entrega->missao);
+        if ($entrega->equipe->turma?->concluida_em) {
+            return back()->withErrors(['reformulacao' => 'Não é possível solicitar reformulação porque a turma foi concluída.']);
+        }
+        if (! $entrega->missao->permite_resposta || $entrega->missao->permite_anexo || blank($entrega->resposta)) {
+            return back()->withErrors(['reformulacao' => 'A reformulação está disponível somente para missões textuais sem anexo e com resposta enviada.']);
+        }
+
+        $ausentes = EquipeMissaoUser::where('equipe_id', $entrega->equipe_id)
+            ->where('missao_id', $entrega->missao_id)
+            ->where('status', 'ausente')
+            ->pluck('user_id');
+        $membrosPresentes = $entrega->equipe->alunos->whereNotIn('id', $ausentes)->pluck('id');
+        $concluidos = EquipeMissaoUser::where('equipe_id', $entrega->equipe_id)
+            ->where('missao_id', $entrega->missao_id)
+            ->whereIn('user_id', $membrosPresentes)
+            ->where('status', 'concluida')
+            ->count();
+        if ($membrosPresentes->isEmpty() || $concluidos !== $membrosPresentes->count()) {
+            return back()->withErrors(['reformulacao' => 'A reformulação só pode ser solicitada após a missão ser concluída pela equipe.']);
+        }
+
+        $entrega->update([
+            'feedback_reformulacao' => $validated['feedback_reformulacao'],
+            'reformulacao_solicitada_em' => now(),
+            'reformulacao_entregue_em' => null,
+        ]);
+
+        return back()->with('success', 'Reformulação da resposta solicitada sem alterar a pontuação.');
     }
 
     public function pontuar(Request $request): RedirectResponse

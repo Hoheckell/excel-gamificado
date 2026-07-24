@@ -336,6 +336,148 @@ class GamificationTest extends TestCase
             ->assertDontSee('Editar resposta textual');
     }
 
+    public function test_professor_can_request_text_reformulation_with_feedback_without_changing_score(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, true, false);
+        $equipe->missoes()->attach($missao, ['resposta' => 'Resposta original avaliada.']);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 70,
+        ]);
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+
+        $this->actingAs($professor)->post(route('missoes.solicitarReformulacao', $entrega->id), [
+            'feedback_reformulacao' => '',
+        ])->assertSessionHasErrors('feedback_reformulacao');
+        $this->assertNull($entrega->fresh()->reformulacao_solicitada_em);
+
+        $this->actingAs($professor)->post(route('missoes.solicitarReformulacao', $entrega->id), [
+            'feedback_reformulacao' => 'Explique o raciocínio e apresente um exemplo.',
+        ])->assertSessionHasNoErrors();
+
+        $entrega->refresh();
+        $this->assertSame('Explique o raciocínio e apresente um exemplo.', $entrega->feedback_reformulacao);
+        $this->assertNotNull($entrega->reformulacao_solicitada_em);
+        $this->assertNull($entrega->reformulacao_entregue_em);
+        $this->assertSame(70, $registro->fresh()->pontuacao_obtida);
+    }
+
+    public function test_team_can_submit_requested_text_reformulation_after_assessment_and_preserve_score(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, true, false);
+        $equipe->missoes()->attach($missao, [
+            'resposta' => 'Resposta original avaliada.',
+            'feedback_reformulacao' => 'Explique o raciocínio.',
+            'reformulacao_solicitada_em' => now(),
+        ]);
+        $registro = EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 70,
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => 'Resposta reformulada com raciocínio e exemplo.',
+        ])->assertSessionHasNoErrors();
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertSame('Resposta reformulada com raciocínio e exemplo.', $entrega->resposta);
+        $this->assertNotNull($entrega->reformulacao_entregue_em);
+        $this->assertSame(70, $registro->fresh()->pontuacao_obtida);
+    }
+
+    public function test_requested_text_reformulation_requires_a_non_empty_response(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $missao = $this->mission(1, 100, true, false);
+        $equipe->missoes()->attach($missao, [
+            'resposta' => 'Resposta original.',
+            'feedback_reformulacao' => 'Aprofunde a explicação.',
+            'reformulacao_solicitada_em' => now(),
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 60,
+        ]);
+
+        $this->actingAs($members[0])->post(route('missoes.entregar'), [
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'resposta' => '',
+        ])->assertSessionHasErrors('resposta');
+
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $this->assertSame('Resposta original.', $entrega->resposta);
+        $this->assertNull($entrega->reformulacao_entregue_em);
+    }
+
+    public function test_text_reformulation_is_professor_only_and_unavailable_for_missions_with_attachments(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, true, true);
+        $equipe->missoes()->attach($missao, ['resposta' => 'Resposta entregue.']);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+        ]);
+        $entrega = $equipe->missoes()->whereKey($missao->id)->firstOrFail()->pivot;
+        $payload = ['feedback_reformulacao' => 'Reescreva a resposta.'];
+
+        $this->actingAs($members[0])
+            ->post(route('missoes.solicitarReformulacao', $entrega->id), $payload)
+            ->assertForbidden();
+
+        $this->actingAs($professor)
+            ->post(route('missoes.solicitarReformulacao', $entrega->id), $payload)
+            ->assertSessionHasErrors('reformulacao');
+
+        $this->assertNull($entrega->fresh()->reformulacao_solicitada_em);
+    }
+
+    public function test_professor_sees_reformulated_response_as_ready_for_reassessment(): void
+    {
+        [$turma, $equipe, $members] = $this->teamWithMembers(1);
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $turma->users()->attach($professor);
+        $missao = $this->mission(1, 100, true, false);
+        $equipe->missoes()->attach($missao, [
+            'resposta' => 'Resposta reformulada.',
+            'feedback_reformulacao' => 'Aprofunde a explicação.',
+            'reformulacao_solicitada_em' => now()->subMinute(),
+            'reformulacao_entregue_em' => now(),
+        ]);
+        EquipeMissaoUser::create([
+            'equipe_id' => $equipe->id,
+            'missao_id' => $missao->id,
+            'user_id' => $members[0]->id,
+            'status' => 'concluida',
+            'pontuacao_obtida' => 70,
+        ]);
+
+        $this->actingAs($professor)->get(route('equipes.index'))
+            ->assertOk()
+            ->assertSee('Resposta reformulada pronta para reavaliação')
+            ->assertSee('Revisar avaliação');
+    }
+
     public function test_professor_sees_resubmitted_attachment_as_ready_for_reassessment(): void
     {
         [$turma, $equipe, $members] = $this->teamWithMembers(1);

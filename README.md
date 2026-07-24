@@ -54,9 +54,10 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Equipes com até 3 presentes recebem 5 minutos extras sem alteração de XP
 - Rodízio compara a distribuição anterior e se adapta às mudanças de presença
 - A resposta textual da equipe pode ser corrigida enquanto nenhum integrante tiver sido avaliado
-- Depois da primeira avaliação, a resposta textual fica bloqueada para preservar o conteúdo avaliado
+- Depois da primeira avaliação, a resposta textual fica bloqueada, exceto quando o professor solicitar formalmente uma reformulação
 - O professor pode solicitar um novo anexo após a conclusão, sempre com feedback obrigatório
 - O reenvio substitui o arquivo anterior, preserva a conclusão e a pontuação vigente e libera nova avaliação
+- Em missões sem anexo, o professor pode solicitar a reformulação da resposta com feedback obrigatório, preservando a nota até a reavaliação
 
 ### Fluxo de entrega e reavaliação
 1. Cada integrante presente inicia a missão com o papel definido para a rodada.
@@ -64,9 +65,9 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 3. A equipe envia uma única resposta textual e/ou um único anexo, conforme a configuração da missão.
 4. Antes da avaliação, a equipe pode editar a resposta textual. Um anexo já enviado não pode ser trocado espontaneamente.
 5. O professor avalia cada integrante com nota, rubrica, feedback e próximo passo.
-6. Se o arquivo precisar de correção, o professor solicita o reenvio e escreve um feedback específico para a equipe.
-7. A equipe envia o novo anexo; o sistema apaga o arquivo substituído e mantém as pontuações registradas.
-8. O professor pode revisar as avaliações diante do novo arquivo. A resposta textual continua bloqueada depois da primeira avaliação.
+6. Se a entrega precisar de correção, o professor escreve um feedback e solicita o reenvio do anexo ou, em missão sem anexo, a reformulação da resposta.
+7. A equipe envia o novo anexo ou a resposta reformulada; a conclusão e as pontuações registradas são preservadas.
+8. O professor pode revisar as avaliações diante da nova entrega. Fora de uma solicitação de reformulação, a resposta textual continua bloqueada depois da primeira avaliação.
 
 ### Minha Jornada
 - Painel do aluno com missão atual, papel, andamento, próxima ação e feedback privado
@@ -163,9 +164,10 @@ O ciclo de entrega possui cenários específicos para:
 - bloqueio até todos os integrantes presentes concluírem;
 - edição da resposta textual somente antes da avaliação;
 - solicitação de reenvio restrita ao professor, após a conclusão e com feedback obrigatório;
+- solicitação de reformulação textual restrita ao professor em missões sem anexo;
 - substituição segura do anexo e remoção do arquivo anterior;
-- preservação da pontuação durante o reenvio;
-- nova avaliação do professor após o recebimento do arquivo corrigido;
+- preservação da pontuação durante o reenvio ou reformulação;
+- nova avaliação do professor após o recebimento da entrega corrigida;
 - comunicação da jornada completa na página de regras.
 
 ## Design System

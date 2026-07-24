@@ -22,7 +22,7 @@ Conforme a utilização do sistema, podem ser tratados:
 
 - **dados de cadastro:** nome, endereço de e-mail, senha protegida por hash, perfil de aluno ou professor, situação de verificação do e-mail e autorizações;
 - **dados acadêmicos e de participação:** turma, equipe, presença ou ausência por missão, papéis desempenhados, horários de início e conclusão e tempo de execução;
-- **entregas e conteúdo pedagógico:** respostas textuais, nomes e conteúdo de anexos, solicitações de reenvio e feedbacks;
+- **entregas e conteúdo pedagógico:** respostas textuais, nomes e conteúdo de anexos, solicitações de reenvio ou reformulação e respectivos feedbacks;
 - **avaliações:** notas, rubricas de competências, próximos passos, pontuação da equipe, badges e categoria alcançada;
 - **certificados:** nome do aluno, turma, equipe, categoria, título, identificação do professor, código de validação e informações necessárias para gerar e enviar o certificado;
 - **dados técnicos e de segurança:** endereço IP, identificadores de sessão, registros de autenticação e informações necessárias para prevenir abuso, limitar tentativas de acesso e manter o sistema seguro.

@@ -85,15 +85,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="rounded-excel border border-slate-200 bg-white p-4">
                         <span class="block text-xs font-bold uppercase tracking-wider text-slate-500">5. Avaliação</span>
-                        <p class="text-xs text-[--text-muted] mt-2 leading-relaxed">O professor registra nota, níveis de competência, feedback e próximo passo para cada integrante. A partir da primeira avaliação, a resposta textual fica bloqueada para preservar aquilo que foi analisado.</p>
+                        <p class="text-xs text-[--text-muted] mt-2 leading-relaxed">O professor registra nota, níveis de competência, feedback e próximo passo para cada integrante. A partir da primeira avaliação, a resposta textual fica bloqueada para preservar aquilo que foi analisado, salvo quando houver uma solicitação formal de reformulação.</p>
                     </div>
                     <div class="rounded-excel border border-amber-200 bg-amber-50 p-4">
-                        <span class="block text-xs font-bold uppercase tracking-wider text-amber-700">6. Correção do anexo</span>
-                        <p class="text-xs text-amber-800 mt-2 leading-relaxed">Se o arquivo precisar de ajustes, somente o professor solicita o reenvio e explica o que corrigir. A missão permanece concluída e a pontuação atual não muda. A equipe substitui apenas o anexo solicitado.</p>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-amber-700">6. Correção orientada da entrega</span>
+                        <p class="text-xs text-amber-800 mt-2 leading-relaxed">Se a entrega precisar de ajustes, somente o professor inicia a correção e explica o que deve mudar. Em missão com arquivo, a equipe substitui o anexo solicitado. Em missão textual sem anexo, a equipe reformula a resposta. A missão permanece concluída e a pontuação atual não muda automaticamente.</p>
                     </div>
                     <div class="rounded-excel border border-green-200 bg-green-50 p-4">
                         <span class="block text-xs font-bold uppercase tracking-wider text-green-700">7. Reavaliação</span>
-                        <p class="text-xs text-green-800 mt-2 leading-relaxed">Depois que o novo arquivo chegar, o professor pode revisar a avaliação. O feedback orienta a melhoria; pontos só mudam se o professor decidir atualizar a nota durante essa nova análise.</p>
+                        <p class="text-xs text-green-800 mt-2 leading-relaxed">Depois que o novo arquivo ou a resposta reformulada chegar, o professor pode revisar a avaliação. O feedback orienta a melhoria; pontos só mudam se o professor decidir atualizar a nota durante essa nova análise.</p>
                     </div>
                 </div>
 

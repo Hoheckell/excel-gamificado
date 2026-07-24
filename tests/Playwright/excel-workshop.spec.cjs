@@ -180,10 +180,11 @@ test.describe('Telas Autenticadas', { tag: '@authenticated' }, () => {
     await expect(jornada.getByText('3. Execute sua parte e conclua individualmente')).toBeVisible();
     await expect(jornada.getByText('4. Faça uma única entrega da equipe')).toBeVisible();
     await expect(jornada.getByText('5. Avaliação')).toBeVisible();
-    await expect(jornada.getByText('6. Correção do anexo')).toBeVisible();
+    await expect(jornada.getByText('6. Correção orientada da entrega')).toBeVisible();
     await expect(jornada.getByText('7. Reavaliação')).toBeVisible();
     await expect(jornada.getByText('8. Acompanhe seu aprendizado e o encerramento')).toBeVisible();
     await expect(jornada.getByText('a resposta textual fica bloqueada', { exact: false })).toBeVisible();
     await expect(jornada.getByText('a pontuação atual não muda', { exact: false })).toBeVisible();
+    await expect(jornada.getByText('a equipe reformula a resposta', { exact: false })).toBeVisible();
   });
 });
