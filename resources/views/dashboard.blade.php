@@ -64,7 +64,7 @@
                     </div>
                     <div class="p-6">
                         @if ($missaoAtual)
-                            <p class="text-sm text-[--text-muted]">{{ $missaoAtual->descricao }}</p>
+                            <p class="text-sm text-[--text-muted]">{{ strip_tags($missaoAtual->descricao) }}</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
                                 <div class="rounded-excel bg-[#f8faf8] border border-[--border-light] p-4">
                                     <span class="text-[10px] uppercase tracking-wider text-[--text-muted]">Seu papel</span>

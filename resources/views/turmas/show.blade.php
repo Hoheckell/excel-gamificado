@@ -33,6 +33,17 @@
             </div>
 
             <div class="p-6">
+                @if (session('success'))
+                    <div class="mb-6 px-5 py-3 bg-excel-tint border border-excel-light text-excel-dark rounded-excel text-sm font-semibold">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if ($turma->concluida_em)
+                    <div class="mb-6 rounded-excel border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                        Turma concluída em {{ $turma->concluida_em->format('d/m/Y H:i') }}. Os anexos de alunos e missões foram apagados definitivamente.
+                    </div>
+                @endif
                 <div class="grid grid-cols-3 gap-4 mb-6">
                     <div class="text-center p-4 rounded-excel bg-[#f8faf8]">
                         <span class="text-2xl font-bold text-excel-dark block">{{ $turma->alunos_count }}</span>
@@ -75,7 +86,15 @@
                     @endforeach
                 </div>
 
-                <div class="flex justify-end mt-6">
+                <div class="flex justify-end items-center mt-6 gap-4">
+                    @can('concluir', $turma)
+                        @if (! $turma->concluida_em)
+                            <form method="POST" action="{{ route('turmas.concluir', $turma) }}" onsubmit="return confirm('Concluir a turma {{ $turma->codigo }}? Todos os anexos de alunos e missões serão apagados definitivamente. Esta ação não poderá ser desfeita.')">
+                                @csrf
+                                <x-danger-button>Concluir turma</x-danger-button>
+                            </form>
+                        @endif
+                    @endcan
                     <a href="{{ route('turmas.index') }}" class="text-sm text-[--text-muted] hover:text-excel-dark transition">Voltar</a>
                 </div>
             </div>

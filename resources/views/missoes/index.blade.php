@@ -33,7 +33,7 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <h3 class="text-white font-semibold text-base">{{ $missao->ordem }}. {{ $missao->titulo }}</h3>
-                                <p class="text-white/80 text-xs mt-1">{{ Str::limit($missao->descricao, 120) }}</p>
+                                <p class="text-white/80 text-xs mt-1">{{ Str::limit(strip_tags($missao->descricao), 120) }}</p>
                                 <div class="flex items-center gap-4 mt-1">
                                     <span class="text-white/70 text-xs">{{ $missao->created_at->format('d/m/Y') }}</span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">
@@ -87,7 +87,7 @@
                             <div id="atribuirModal{{ $missao->id }}" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
                                 <div class="bg-white rounded-excel w-full max-w-md shadow-xl overflow-hidden">
                                     <div class="excel-ribbon px-5 py-3">
-                                        <h3 class="text-white font-semibold">Atribuir Equipes — {{ Str::limit($missao->descricao, 50) }}</h3>
+                                        <h3 class="text-white font-semibold">Atribuir Equipes — {{ Str::limit(strip_tags($missao->descricao), 50) }}</h3>
                                     </div>
                                     <form method="POST" action="{{ route('missoes.atribuir', $missao) }}" class="p-5 space-y-4">
                                         @csrf

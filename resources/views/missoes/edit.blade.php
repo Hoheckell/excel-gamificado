@@ -13,7 +13,7 @@
             </div>
 
             <div class="p-8">
-                <form method="POST" action="{{ route('missoes.update', $missao) }}">
+                <form method="POST" action="{{ route('missoes.update', $missao) }}" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -33,7 +33,38 @@
                         <div>
                             <x-label for="descricao" value="Descrição da Missão" />
                             <textarea id="descricao" name="descricao" rows="4" required class="mt-1 block w-full border border-[--border-light] rounded-excel px-3 py-2 text-[--text-main] bg-white focus:border-excel-dark focus:ring-excel-light text-sm">{{ old('descricao', $missao->descricao) }}</textarea>
+                            <p class="text-xs text-[--text-muted] mt-1">HTML seguro é aceito (títulos, parágrafos, listas, tabelas, links e blocos de código).</p>
                             <x-input-error for="descricao" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <x-label for="url" value="URL de apoio (opcional)" />
+                            <x-input id="url" class="block mt-1 w-full" type="url" name="url" :value="old('url', $missao->url)" placeholder="https://exemplo.com/material" />
+                            <x-input-error for="url" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <x-label for="anexos" value="Adicionar anexos (opcional)" />
+                            <input id="anexos" name="anexos[]" type="file" multiple accept=".png,.jpg,.xls,.xlsx,.docs,.doc,.csv,.txt,.pdf" class="mt-1 block w-full text-sm text-[--text-main] file:mr-4 file:rounded file:border-0 file:bg-excel-tint file:px-3 file:py-2 file:text-excel-dark">
+                            <p class="text-xs text-[--text-muted] mt-1">Sem limite de quantidade; até 3 MB por arquivo.</p>
+                            <x-input-error for="anexos" class="mt-1" />
+                            <x-input-error for="anexos.*" class="mt-1" />
+
+                            @if ($missao->anexos->isNotEmpty())
+                                <div class="mt-3 space-y-2">
+                                    <p class="text-xs font-semibold text-[--text-main]">Anexos atuais</p>
+                                    @foreach ($missao->anexos as $anexo)
+                                        @if ($anexo->removido_em)
+                                            <p class="text-sm font-medium text-amber-700">{{ $anexo->nome_original }} — o arquivo não existe porque a turma foi concluída.</p>
+                                        @else
+                                            <label class="flex items-center gap-2 text-sm text-[--text-main]">
+                                                <input type="checkbox" name="remover_anexos[]" value="{{ $anexo->id }}" class="rounded border-[--border-light] text-red-600">
+                                                Remover {{ $anexo->nome_original }} ({{ Number::fileSize($anexo->tamanho) }})
+                                            </label>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         <div>

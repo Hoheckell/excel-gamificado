@@ -6,13 +6,16 @@ use App\Models\Equipe;
 use App\Models\EquipeMissao;
 use App\Models\EquipeMissaoUser;
 use App\Models\Missao;
+use App\Models\MissaoAnexo;
+use App\Rules\MissionAttachment;
+use App\Support\MissionHtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class MissaoController extends Controller
 {
@@ -36,53 +39,96 @@ class MissaoController extends Controller
         return view('missoes.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, MissionHtmlSanitizer $sanitizer): RedirectResponse
     {
-        $validated = $request->validate([
-            'titulo' => 'required|string|max:255',
-            'ordem' => 'required|integer|min:1',
-            'descricao' => 'required|string|max:5000',
-            'pontuacao' => 'required|integer|min:1|max:500',
-            'permite_resposta' => 'sometimes|boolean',
-            'permite_anexo' => 'sometimes|boolean',
-        ]);
+        $validated = $this->validateMission($request);
+        $files = $request->file('anexos', []);
 
+        $validated['descricao'] = $sanitizer->sanitize($validated['descricao']);
         $validated['permite_resposta'] = $request->boolean('permite_resposta');
         $validated['permite_anexo'] = $request->boolean('permite_anexo');
+        unset($validated['anexos']);
 
-        Missao::create($validated);
+        $storedPaths = [];
+
+        try {
+            DB::transaction(function () use ($validated, $files, &$storedPaths): void {
+                $missao = Missao::create($validated);
+                $this->storeAttachments($missao, $files, $storedPaths);
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
+            throw $exception;
+        }
 
         return redirect()->route('missoes.index')
             ->with('success', 'Missão criada com sucesso.');
     }
 
+    private function validateMission(Request $request, ?Missao $missao = null): array
+    {
+        return $request->validate([
+            'titulo' => 'required|string|max:255',
+            'ordem' => 'required|integer|min:1',
+            'descricao' => 'required|string|max:20000',
+            'url' => ['nullable', 'url:http,https', 'max:2048'],
+            'pontuacao' => 'required|integer|min:1|max:500',
+            'permite_resposta' => 'sometimes|boolean',
+            'permite_anexo' => 'sometimes|boolean',
+            'anexos' => ['sometimes', 'array'],
+            'anexos.*' => ['file', new MissionAttachment],
+            'remover_anexos' => ['sometimes', 'array'],
+            'remover_anexos.*' => [
+                'integer',
+                Rule::exists('missao_anexos', 'id')->when(
+                    $missao,
+                    fn ($query) => $query->where('missao_id', $missao->id)
+                ),
+            ],
+        ]);
+    }
+
     public function show(Missao $missao): View
     {
-        $missao->load('equipes:id,nome,turma_id');
+        $missao->load(['equipes:id,nome,turma_id', 'anexos']);
 
         return view('missoes.show', compact('missao'));
     }
 
     public function edit(Missao $missao): View
     {
+        $missao->load('anexos');
+
         return view('missoes.edit', compact('missao'));
     }
 
-    public function update(Request $request, Missao $missao): RedirectResponse
+    public function update(Request $request, Missao $missao, MissionHtmlSanitizer $sanitizer): RedirectResponse
     {
-        $validated = $request->validate([
-            'titulo' => 'required|string|max:255',
-            'ordem' => 'required|integer|min:1',
-            'descricao' => 'required|string|max:5000',
-            'pontuacao' => 'required|integer|min:1|max:500',
-            'permite_resposta' => 'sometimes|boolean',
-            'permite_anexo' => 'sometimes|boolean',
-        ]);
-
+        $validated = $this->validateMission($request, $missao);
+        $files = $request->file('anexos', []);
+        $removeIds = $validated['remover_anexos'] ?? [];
+        $validated['descricao'] = $sanitizer->sanitize($validated['descricao']);
         $validated['permite_resposta'] = $request->boolean('permite_resposta');
         $validated['permite_anexo'] = $request->boolean('permite_anexo');
+        unset($validated['anexos'], $validated['remover_anexos']);
 
-        $missao->update($validated);
+        $storedPaths = [];
+        $pathsToDelete = [];
+
+        try {
+            DB::transaction(function () use ($missao, $validated, $files, $removeIds, &$storedPaths, &$pathsToDelete): void {
+                $missao->update($validated);
+                $attachments = $missao->anexos()->whereKey($removeIds)->get();
+                $pathsToDelete = $attachments->pluck('path')->all();
+                $attachments->each->delete();
+                $this->storeAttachments($missao, $files, $storedPaths);
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
+            throw $exception;
+        }
+
+        Storage::disk('local')->delete($pathsToDelete);
 
         return redirect()->route('missoes.index')
             ->with('success', 'Missão atualizada.');
@@ -90,10 +136,46 @@ class MissaoController extends Controller
 
     public function destroy(Missao $missao): RedirectResponse
     {
+        $paths = $missao->anexos()->pluck('path')->all();
         $missao->delete();
+        Storage::disk('local')->delete($paths);
 
         return redirect()->route('missoes.index')
             ->with('success', 'Missão removida.');
+    }
+
+    public function baixarRecurso(Missao $missao, MissaoAnexo $anexo): Response
+    {
+        $this->authorize('view', $missao);
+        abort_unless($anexo->missao_id === $missao->id, 404);
+        if ($anexo->removido_em) {
+            return response('O arquivo não existe porque a turma foi concluída.', 410);
+        }
+        abort_unless(Storage::disk('local')->exists($anexo->path), 404);
+
+        return Storage::disk('local')->download(
+            $anexo->path,
+            $anexo->nome_original,
+            ['Content-Type' => $anexo->mime_type, 'X-Content-Type-Options' => 'nosniff']
+        );
+    }
+
+    private function storeAttachments(Missao $missao, array $files, array &$storedPaths): void
+    {
+        foreach ($files as $file) {
+            $path = $file->store("anexos-missoes/{$missao->id}", 'local');
+            $storedPaths[] = $path;
+            $missao->anexos()->create([
+                'path' => $path,
+                'nome_original' => preg_replace(
+                    '/[\x00-\x1F\x7F]/u',
+                    '',
+                    basename($file->getClientOriginalName())
+                ),
+                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                'tamanho' => $file->getSize(),
+            ]);
+        }
     }
 
     public function atribuir(Request $request, Missao $missao): RedirectResponse
@@ -356,6 +438,9 @@ class MissaoController extends Controller
             'anexo' => [Rule::prohibitedIf(! $missao->permite_anexo), 'nullable', 'file', 'max:10240'],
         ]);
         $equipe = Equipe::with('alunos:id,equipe_id')->findOrFail($validatedIds['equipe_id']);
+        if ($equipe->turma?->concluida_em) {
+            return back()->withErrors(['entrega' => 'Não é possível enviar arquivos porque a turma foi concluída.']);
+        }
         $ausentes = EquipeMissaoUser::where($validatedIds)
             ->where('status', 'ausente')
             ->pluck('user_id');
@@ -379,10 +464,14 @@ class MissaoController extends Controller
         return back()->with('success', 'Entrega da equipe enviada com sucesso.');
     }
 
-    public function baixarAnexo(Request $request, EquipeMissao $entrega): StreamedResponse
+    public function baixarAnexo(Request $request, EquipeMissao $entrega): Response
     {
         if ($request->user()->equipe_id !== $entrega->equipe_id) {
             $this->authorize('atribuirEquipes', $entrega->missao);
+        }
+
+        if ($entrega->anexo_removido_em || $entrega->equipe->turma?->concluida_em) {
+            return response('O arquivo não existe porque a turma foi concluída.', 410);
         }
 
         abort_unless($entrega->anexo_path && Storage::exists($entrega->anexo_path), 404);

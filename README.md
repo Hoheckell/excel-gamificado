@@ -17,6 +17,9 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Código único gerado automaticamente (6 caracteres alfanuméricos)
 - Alunos podem entrar em turmas ativas digitando o código
 - Filtro de turmas ativas/encerradas
+- Conclusão explícita e irreversível pelo professor responsável
+- Ao concluir, anexos de entregas e materiais das missões vinculadas são apagados definitivamente
+- Downloads removidos são substituídos por aviso de indisponibilidade, preservando o histórico da atividade
 
 ### Equipes
 - Sorteio automático com distribuição aleatória
@@ -25,7 +28,10 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 - Gerenciamento de pontuação (+/- pontos)
 
 ### Missões
-- CRUD de missões com descrição e pontuação (professor)
+- CRUD de missões com descrição HTML sanitizada, URL opcional e pontuação (professor)
+- Quantidade ilimitada de materiais anexos, com até 3 MB por arquivo e validação de extensão e conteúdo
+- Formatos aceitos: PNG, JPG, XLS, XLSX, DOCS, DOC, CSV, TXT e PDF
+- Arquivos armazenados de forma privada e servidos somente por rotas autenticadas e autorizadas
 - Atribuição de missões a múltiplas equipes
 - Alunos iniciam/finalizam missões com **timer H:mm:ss**
 - Professor avalia cada aluno com nota, rubrica de competências, feedback e próximo passo
@@ -75,12 +81,14 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Backend | Laravel 12 + PHP 8.4 |
+| Backend | Laravel 13 + PHP 8.3 ou superior |
 | Frontend | Blade + Tailwind CSS + Alpine.js |
 | Autenticação | Laravel Jetstream (Livewire) + Fortify + Sanctum |
 | Banco | SQLite (dev) |
 | PDF | DomPDF 3.x |
 | Testes | PHPUnit + Playwright |
+
+O build utiliza Node.js 22.12 ou superior dentro da linha 22. A versão recomendada está registrada em `.nvmrc`.
 
 ## Instalação
 
@@ -88,7 +96,7 @@ Sistema web para gerenciamento de turmas, equipes e missões gamificadas do curs
 git clone git@github.com:Hoheckell/excel-gamificado.git
 cd excel-gamificado
 composer install
-npm install
+npm ci
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
@@ -118,7 +126,7 @@ php artisan test
 npm run test:e2e
 ```
 
-Os testes cobrem autenticação, regras de autorização, turmas, equipes, missões, categorias, badges, placar, regras e certificados.
+Os testes cobrem autenticação, regras de autorização, turmas, equipes, missões, categorias, badges, placar, regras e certificados. A cobertura de missões inclui sanitização de HTML, validação e armazenamento privado de anexos, limite por arquivo, exclusão ao concluir a turma, bloqueio de novos envios e indisponibilidade de URLs antigas.
 
 ## Design System
 

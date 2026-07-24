@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Turma;
-use App\Models\User;
+use App\Services\ConcluirTurma;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -25,8 +25,8 @@ class TurmaController extends Controller
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('codigo', 'like', '%' . $request->search . '%')
-                  ->orWhere('descricao', 'like', '%' . $request->search . '%');
+                $q->where('codigo', 'like', '%'.$request->search.'%')
+                    ->orWhere('descricao', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -63,7 +63,7 @@ class TurmaController extends Controller
 
     public function show(Turma $turma): View
     {
-        $turma->loadCount(['alunos', 'equipes','professores']);
+        $turma->loadCount(['alunos', 'equipes', 'professores']);
         $turma->load(['equipes:id,nome,turma_id', 'users:id,name,tipo']);
 
         return view('turmas.show', compact('turma'));
@@ -95,6 +95,20 @@ class TurmaController extends Controller
 
         return redirect()->route('turmas.index')
             ->with('success', "Turma {$codigo} removida.");
+    }
+
+    public function concluir(Turma $turma, ConcluirTurma $concluirTurma): RedirectResponse
+    {
+        $this->authorize('concluir', $turma);
+
+        if ($turma->concluida_em) {
+            return back()->with('success', "A turma {$turma->codigo} já estava concluída.");
+        }
+
+        $concluirTurma->execute($turma);
+
+        return redirect()->route('turmas.show', $turma)
+            ->with('success', "Turma {$turma->codigo} concluída. Todos os anexos foram apagados.");
     }
 
     private function gerarCodigoUnico(): string

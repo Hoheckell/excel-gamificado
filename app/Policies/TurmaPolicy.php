@@ -32,6 +32,11 @@ class TurmaPolicy
         return $this->professorDaTurma($user, $turma);
     }
 
+    public function concluir(User $user, Turma $turma): bool
+    {
+        return $this->professorDaTurma($user, $turma);
+    }
+
     private function professorDaTurma(User $user, Turma $turma): bool
     {
         if (! $user->isProfessor()) {

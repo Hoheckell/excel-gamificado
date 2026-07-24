@@ -329,6 +329,94 @@ class GamificationTest extends TestCase
         ]);
     }
 
+    public function test_professor_can_create_mission_with_safe_html_url_and_unlimited_private_attachments(): void
+    {
+        Storage::fake('local');
+        $professor = User::factory()->create(['tipo' => 'professor']);
+
+        $response = $this->actingAs($professor)->post(route('missoes.store'), [
+            'titulo' => 'Missão com materiais',
+            'ordem' => 3,
+            'descricao' => '<h2>Planilha</h2><p>Use <strong>PROCV</strong>.</p><script>alert(1)</script><a href="javascript:alert(2)">Perigo</a>',
+            'url' => 'https://example.com/material',
+            'pontuacao' => 100,
+            'anexos' => [
+                UploadedFile::fake()->createWithContent(
+                    'roteiro.jpg',
+                    base64_decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/EB//xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/EB//xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/EB//2Q==')
+                ),
+                UploadedFile::fake()->create('dados.csv', 100, 'text/csv'),
+                UploadedFile::fake()->create('guia.pdf', 100, 'application/pdf'),
+            ],
+        ]);
+
+        $response->assertRedirect(route('missoes.index'))->assertSessionHasNoErrors();
+        $missao = Missao::where('titulo', 'Missão com materiais')->firstOrFail();
+
+        $this->assertStringContainsString('<strong>PROCV</strong>', $missao->descricao);
+        $this->assertStringNotContainsString('<script', $missao->descricao);
+        $this->assertStringNotContainsString('javascript:', $missao->descricao);
+        $this->assertSame('https://example.com/material', $missao->url);
+        $this->assertCount(3, $missao->anexos);
+        $missao->anexos->each(fn ($anexo) => Storage::disk('local')->assertExists($anexo->path));
+
+        $this->actingAs($professor)->get(route('missoes.show', $missao))
+            ->assertOk()
+            ->assertSee('<strong>PROCV</strong>', false)
+            ->assertDontSee('alert(1)')
+            ->assertDontSee('javascript:alert(2)')
+            ->assertSee('Abrir URL de apoio')
+            ->assertSee('roteiro.jpg');
+    }
+
+    public function test_mission_rejects_unsafe_url_disallowed_extension_and_attachment_over_three_megabytes(): void
+    {
+        Storage::fake('local');
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $base = [
+            'titulo' => 'Missão inválida',
+            'ordem' => 4,
+            'descricao' => '<p>Teste</p>',
+            'pontuacao' => 100,
+        ];
+
+        $this->actingAs($professor)->post(route('missoes.store'), $base + [
+            'url' => 'javascript:alert(1)',
+            'anexos' => [UploadedFile::fake()->create('programa.exe', 10, 'application/octet-stream')],
+        ])->assertSessionHasErrors(['url', 'anexos.0']);
+
+        $this->actingAs($professor)->post(route('missoes.store'), $base + [
+            'anexos' => [UploadedFile::fake()->create('grande.pdf', 3073, 'application/pdf')],
+        ])->assertSessionHasErrors('anexos.0');
+
+        $this->assertDatabaseMissing('missoes', ['titulo' => 'Missão inválida']);
+    }
+
+    public function test_professor_can_remove_a_mission_attachment_and_file_is_deleted(): void
+    {
+        Storage::fake('local');
+        $professor = User::factory()->create(['tipo' => 'professor']);
+        $missao = $this->mission(1);
+        Storage::disk('local')->put('anexos-missoes/1/arquivo.pdf', 'pdf');
+        $anexo = $missao->anexos()->create([
+            'path' => 'anexos-missoes/1/arquivo.pdf',
+            'nome_original' => 'arquivo.pdf',
+            'mime_type' => 'application/pdf',
+            'tamanho' => 3,
+        ]);
+
+        $this->actingAs($professor)->put(route('missoes.update', $missao), [
+            'titulo' => $missao->titulo,
+            'ordem' => $missao->ordem,
+            'descricao' => $missao->descricao,
+            'pontuacao' => $missao->pontuacao,
+            'remover_anexos' => [$anexo->id],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('missao_anexos', ['id' => $anexo->id]);
+        Storage::disk('local')->assertMissing($anexo->path);
+    }
+
     public function test_placar_uses_xp_average_and_keeps_350_in_tense_state(): void
     {
         [$turma] = $this->teamWithMembers(1, 350);

@@ -161,7 +161,7 @@
                                     <div class="p-2.5 rounded-excel bg-excel-tint/50 space-y-2">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="flex-1 min-w-0">
-                                                <p class="text-xs text-[--text-main] leading-relaxed">{{ Str::limit($missao->descricao, 120) }}</p>
+                                                <p class="text-xs text-[--text-main] leading-relaxed">{{ Str::limit(strip_tags($missao->descricao), 120) }}</p>
                                             </div>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-excel-dark text-white shrink-0">
                                                 {{ $missao->pontuacao }}pts
@@ -268,7 +268,7 @@
                                                 </div>
                                             @endif
 
-                                            @if ($todosConcluiram && ($missao->permite_resposta || $missao->permite_anexo))
+                                            @if (! $equipe->turma?->concluida_em && $todosConcluiram && ($missao->permite_resposta || $missao->permite_anexo))
                                                 @if (! $missao->pivot->resposta && ! $missao->pivot->anexo_path)
                                                     <button type="button" onclick="document.getElementById('entregaModal{{ $missao->pivot->id }}').classList.remove('hidden')" class="text-[10px] font-bold px-2.5 py-1 rounded bg-excel-dark text-white hover:bg-excel-light transition">
                                                         Enviar entrega da equipe
@@ -380,7 +380,11 @@
                                                             <p class="whitespace-pre-line"><strong>Resposta da equipe:</strong> {{ $missao->pivot->resposta }}</p>
                                                         @endif
                                                         @if ($missao->pivot->anexo_path)
-                                                            <a href="{{ route('missoes.anexo', $missao->pivot->id) }}" class="font-semibold text-excel-dark underline">Baixar anexo: {{ $missao->pivot->anexo_nome_original }}</a>
+                                                            @if ($missao->pivot->anexo_removido_em || $equipe->turma?->concluida_em)
+                                                                <span class="font-semibold text-amber-700">O arquivo não existe porque a turma foi concluída.</span>
+                                                            @else
+                                                                <a href="{{ route('missoes.anexo', $missao->pivot->id) }}" class="font-semibold text-excel-dark underline">Baixar anexo: {{ $missao->pivot->anexo_nome_original }}</a>
+                                                            @endif
                                                         @endif
                                                     </div>
                                                 @endif

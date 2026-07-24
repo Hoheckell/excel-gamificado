@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Turma extends Model
 {
@@ -17,11 +16,13 @@ class Turma extends Model
         'descricao',
         'dt_inicio',
         'dt_fim',
+        'concluida_em',
     ];
 
     protected $casts = [
         'dt_inicio' => 'date',
         'dt_fim' => 'date',
+        'concluida_em' => 'datetime',
     ];
 
     public function equipes(): HasMany
@@ -32,20 +33,20 @@ class Turma extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'turmas_users')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     public function professores(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'turmas_users')
-                    ->where('users.tipo', 'professor')
-                    ->withTimestamps();
+            ->where('users.tipo', 'professor')
+            ->withTimestamps();
     }
 
     public function alunos(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'turmas_users')
-                    ->where('users.tipo', 'aluno')
-                    ->withTimestamps();
+            ->where('users.tipo', 'aluno')
+            ->withTimestamps();
     }
 }

@@ -134,7 +134,7 @@
                                             @foreach ($equipe->missoes_com_pontuacao as $missao)
                                                 <div class="rounded-excel bg-[#f8faf8] p-3">
                                                     <div class="flex items-center justify-between mb-2">
-                                                        <p class="text-xs text-[--text-main] font-medium flex-1 pr-3">{{ Str::limit($missao->descricao, 120) }}</p>
+                                                        <p class="text-xs text-[--text-main] font-medium flex-1 pr-3">{{ Str::limit(strip_tags($missao->descricao), 120) }}</p>
                                                         <span class="text-[10px] font-bold text-excel-dark bg-excel-tint px-2 py-0.5 rounded-full shrink-0">{{ $missao->pontuacao }}pts</span>
                                                     </div>
                                                     <div class="space-y-1.5">

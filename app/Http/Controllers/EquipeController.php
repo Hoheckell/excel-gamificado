@@ -16,7 +16,7 @@ class EquipeController extends Controller
     public function index(Request $request): View
     {
         $query = Equipe::with([
-            'turma:id,codigo,descricao',
+            'turma:id,codigo,descricao,concluida_em',
             'alunos:id,name,equipe_id',
             'missoes:id,titulo,descricao,pontuacao,permite_resposta,permite_anexo',
             'missoes.progresso.papeis',

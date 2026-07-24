@@ -28,6 +28,7 @@ Route::middleware([
     Route::resource('alunos', AlunoController::class)->except(['show']);
     Route::resource('equipes', EquipeController::class);
     Route::resource('turmas', TurmaController::class);
+    Route::post('turmas/{turma}/concluir', [TurmaController::class, 'concluir'])->name('turmas.concluir');
     Route::resource('categorias', CategoriaController::class);
     Route::resource('badges', BadgeController::class)->except(['show']);
     Route::resource('missoes', MissaoController::class)
@@ -35,6 +36,7 @@ Route::middleware([
 
     Route::post('missoes/{missao}/atribuir', [MissaoController::class, 'atribuir'])->name('missoes.atribuir');
     Route::post('missoes/{missao}/remover-equipe', [MissaoController::class, 'removerEquipe'])->name('missoes.removerEquipe');
+    Route::get('missoes/{missao}/recursos/{anexo}', [MissaoController::class, 'baixarRecurso'])->name('missoes.recursos.download');
     Route::post('missoes/iniciar', [MissaoController::class, 'iniciar'])->name('missoes.iniciar');
     Route::post('missoes/finalizar', [MissaoController::class, 'finalizar'])->name('missoes.finalizar');
     Route::post('missoes/comunicar-falta', [MissaoController::class, 'comunicarFalta'])->name('missoes.comunicarFalta');

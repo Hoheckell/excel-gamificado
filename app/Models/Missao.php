@@ -17,6 +17,7 @@ class Missao extends Model
         'titulo',
         'ordem',
         'descricao',
+        'url',
         'pontuacao',
         'permite_resposta',
         'permite_anexo',
@@ -33,12 +34,17 @@ class Missao extends Model
     {
         return $this->belongsToMany(Equipe::class, 'equipes_missoes')
             ->using(EquipeMissao::class)
-            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original', 'tempo_extra_minutos'])
+            ->withPivot(['id', 'resposta', 'anexo_path', 'anexo_nome_original', 'anexo_removido_em', 'tempo_extra_minutos'])
             ->withTimestamps();
     }
 
     public function progresso(): HasMany
     {
         return $this->hasMany(EquipeMissaoUser::class, 'missao_id');
+    }
+
+    public function anexos(): HasMany
+    {
+        return $this->hasMany(MissaoAnexo::class);
     }
 }

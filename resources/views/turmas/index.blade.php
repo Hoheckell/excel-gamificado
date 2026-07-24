@@ -39,6 +39,9 @@
                             <div>
                                 <span class="text-xs text-white/60 uppercase tracking-widest font-mono">{{ $turma->codigo }}</span>
                                 <h3 class="text-white font-semibold text-base mt-0.5">{{ $turma->descricao }}</h3>
+                                @if ($turma->concluida_em)
+                                    <span class="mt-1 inline-flex rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white">Concluída</span>
+                                @endif
                             </div>
                         </div>
                     </div>

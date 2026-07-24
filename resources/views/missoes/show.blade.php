@@ -14,8 +14,30 @@
 
             <div class="p-6">
                 <div class="mb-6 p-4 rounded-excel bg-[#f8faf8]">
-                    <p class="text-[--text-main] leading-relaxed">{{ $missao->descricao }}</p>
+                    <div class="prose prose-sm max-w-none text-[--text-main] leading-relaxed">{!! $missao->descricao !!}</div>
                 </div>
+
+                @if ($missao->url || $missao->anexos->isNotEmpty())
+                    <div class="mb-6 rounded-excel border border-[--border-light] p-4">
+                        <h3 class="font-semibold text-sm text-[--text-main] mb-3">Materiais da missão</h3>
+                        <div class="flex flex-col items-start gap-2">
+                            @if ($missao->url)
+                                <a href="{{ $missao->url }}" target="_blank" rel="noopener noreferrer" class="text-sm text-excel-dark underline">Abrir URL de apoio</a>
+                            @endif
+                            @foreach ($missao->anexos as $anexo)
+                                @if ($anexo->removido_em)
+                                    <span class="text-sm font-medium text-amber-700">
+                                        {{ $anexo->nome_original }} — o arquivo não existe porque a turma foi concluída.
+                                    </span>
+                                @else
+                                    <a href="{{ route('missoes.recursos.download', [$missao, $anexo]) }}" class="text-sm text-excel-dark underline">
+                                        {{ $anexo->nome_original }} ({{ Number::fileSize($anexo->tamanho) }})
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 @if ($missao->permite_resposta || $missao->permite_anexo)
                     <div class="mb-6 flex flex-wrap gap-2">
